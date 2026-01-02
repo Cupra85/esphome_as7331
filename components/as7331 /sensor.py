@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import sensor
+from esphome.components import i2c, sensor   # 🔴 i2c ergänzt
 from esphome.const import UNIT_WATT_PER_SQUARE_METER
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
