@@ -3,7 +3,6 @@ import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
     CONF_ID,
-    CONF_ADDRESS,
     CONF_UVA,
     CONF_UVB,
     CONF_UVC,
@@ -23,25 +22,40 @@ CONF_ENABLE_DIVIDER = "enable_divider"
 CONF_TEMP_CONV_ENABLED = "temp_conversion_enabled"
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
-AS7331Component = as7331_ns.class_("AS7331Component", cg.PollingComponent, i2c.I2CDevice)
+AS7331Component = as7331_ns.class_(
+    "AS7331Component", cg.PollingComponent, i2c.I2CDevice
+)
 
 GAIN_MAP = {
-    2048: 0, 1024: 1, 512: 2, 256: 3, 128: 4, 64: 5, 32: 6, 16: 7, 8: 8, 4: 9, 2: 10, 1: 11,
+    2048: 0, 1024: 1, 512: 2, 256: 3, 128: 4, 64: 5,
+    32: 6, 16: 7, 8: 8, 4: 9, 2: 10, 1: 11,
 }
 
-# SparkFun enum order: TIME_1MS=0 .. TIME_16384MS=14 :contentReference[oaicite:1]{index=1}
 TIME_MAP_MS = {
-    1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5, 64: 6, 128: 7, 256: 8, 512: 9, 1024: 10, 2048: 11, 4096: 12, 8192: 13, 16384: 14
+    1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5,
+    64: 6, 128: 7, 256: 8, 512: 9,
+    1024: 10, 2048: 11, 4096: 12,
+    8192: 13, 16384: 14,
 }
 
-# CCLK: 1.024/2.048/4.096/8.192 MHz -> 0..3 :contentReference[oaicite:2]{index=2}
-CCLK_MAP_MHZ = {1.024: 0, 2.048: 1, 4.096: 2, 8.192: 3}
+CCLK_MAP_MHZ = {
+    1.024: 0,
+    2.048: 1,
+    4.096: 2,
+    8.192: 3,
+}
 
-# Measurement modes: CONT=0, CMD=1, SYNS=2, SYND=3 :contentReference[oaicite:3]{index=3}
-MEAS_MODE_MAP = {"cont": 0, "cmd": 1, "syns": 2, "synd": 3}
+MEAS_MODE_MAP = {
+    "cont": 0,
+    "cmd": 1,
+    "syns": 2,
+    "synd": 3,
+}
 
-# Divider values: DIV_2=0 .. DIV_256=7 :contentReference[oaicite:4]{index=4}
-DIVIDER_MAP = {2: 0, 4: 1, 8: 2, 16: 3, 32: 4, 64: 5, 128: 6, 256: 7}
+DIVIDER_MAP = {
+    2: 0, 4: 1, 8: 2, 16: 3,
+    32: 4, 64: 5, 128: 6, 256: 7,
+}
 
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
@@ -82,8 +96,6 @@ CONFIG_SCHEMA = cv.All(
 
             cv.Optional(CONF_ENABLE_DIVIDER, default=False): cv.boolean,
             cv.Optional(CONF_DIVIDER, default=2): cv.one_of(*DIVIDER_MAP.keys(), int=True),
-
-            # In SparkFun: CREG2 en_tm is relevant for SYND temp conversion :contentReference[oaicite:5]{index=5}
             cv.Optional(CONF_TEMP_CONV_ENABLED, default=True): cv.boolean,
         }
     )
@@ -99,15 +111,19 @@ async def to_code(config):
     if CONF_UVA in config:
         sens = await sensor.new_sensor(config[CONF_UVA])
         cg.add(var.set_uva_sensor(sens))
+
     if CONF_UVB in config:
         sens = await sensor.new_sensor(config[CONF_UVB])
         cg.add(var.set_uvb_sensor(sens))
+
     if CONF_UVC in config:
         sens = await sensor.new_sensor(config[CONF_UVC])
         cg.add(var.set_uvc_sensor(sens))
+
     if CONF_TEMPERATURE in config:
         sens = await sensor.new_sensor(config[CONF_TEMPERATURE])
         cg.add(var.set_temperature_sensor(sens))
+
     if CONF_OUTCONV in config:
         sens = await sensor.new_sensor(config[CONF_OUTCONV])
         cg.add(var.set_outconv_sensor(sens))
@@ -119,3 +135,7 @@ async def to_code(config):
     cg.add(var.set_enable_divider(config[CONF_ENABLE_DIVIDER]))
     cg.add(var.set_divider(DIVIDER_MAP[config[CONF_DIVIDER]]))
     cg.add(var.set_temp_conversion_enabled(config[CONF_TEMP_CONV_ENABLED]))
+
+
+# >>> ZWINGEND ERFORDERLICH <<<
+PLATFORM_SCHEMA = CONFIG_SCHEMA
