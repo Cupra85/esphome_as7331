@@ -24,7 +24,8 @@ CONFIG_SCHEMA = (
             cv.Optional("gain", default=5): cv.int_range(min=0, max=11),
             cv.Optional("integration_time", default=8): cv.int_range(min=0, max=15),
         }
-    ).extend(i2c.i2c_device_schema(0x77))
+    )
+    .extend(i2c.i2c_device_schema(0x77))
 )
 
 async def to_code(config):
@@ -38,9 +39,11 @@ async def to_code(config):
     if "uva" in config:
         sens = await sensor.new_sensor(config["uva"])
         cg.add(var.set_uva_sensor(sens))
+
     if "uvb" in config:
         sens = await sensor.new_sensor(config["uvb"])
         cg.add(var.set_uvb_sensor(sens))
+
     if "uvc" in config:
         sens = await sensor.new_sensor(config["uvc"])
         cg.add(var.set_uvc_sensor(sens))
