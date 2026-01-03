@@ -26,11 +26,19 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void set_cclk(uint8_t c) { cclk_ = c; }
   void set_measurement_mode(uint8_t m) { meas_mode_ = m; }
 
+  // Divider
+  void set_enable_divider(bool e) { en_div_ = e; }
+  void set_divider(uint8_t d) { divider_ = d; }
+
   void setup() override;
   void update() override;
 
  protected:
-  static constexpr uint8_t REG_OSR = 0x00;
+  static constexpr uint8_t REG_OSR   = 0x00;
+  static constexpr uint8_t REG_CREG1 = 0x06;
+  static constexpr uint8_t REG_CREG2 = 0x07;
+  static constexpr uint8_t REG_CREG3 = 0x08;
+
   static constexpr uint8_t REG_MRES1 = 0x02;
   static constexpr uint8_t REG_MRES2 = 0x03;
   static constexpr uint8_t REG_MRES3 = 0x04;
@@ -38,11 +46,10 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   static constexpr uint8_t OSR_SS = 0x80;
   static constexpr uint8_t OSR_DOS_MASK = 0x07;
   static constexpr uint8_t DOS_MEAS = 0x03;
-  static constexpr uint8_t DOS_CFG = 0x02;
 
   bool start_measurement_();
   bool wait_for_data_();
-
+  bool write_cfg_();
   bool read_u16_(uint8_t reg, uint16_t &out);
 
   sensor::Sensor *uva_{nullptr};
@@ -61,6 +68,9 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   uint8_t conv_time_{6};
   uint8_t cclk_{0};
   uint8_t meas_mode_{0};
+
+  bool en_div_{false};
+  uint8_t divider_{0};
 };
 
 }  // namespace as7331
