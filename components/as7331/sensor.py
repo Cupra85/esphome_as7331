@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
-from esphome.const import STATE_CLASS_MEASUREMENT
+from esphome.const import STATE_CLASS_MEASUREMENT, CONF_ID
 
 CONF_UVA_RAW = "uva_raw"
 CONF_UVB_RAW = "uvb_raw"
