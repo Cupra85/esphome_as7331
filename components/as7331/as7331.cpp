@@ -7,7 +7,7 @@ namespace as7331 {
 static const char *TAG = "as7331";
 
 void AS7331Component::setup() {
-  ESP_LOGI(TAG, "AS7331 setup complete");
+  write_cfg_();
 }
 
 void AS7331Component::update() {
@@ -25,7 +25,7 @@ void AS7331Component::update() {
   if (!read_u16_(REG_MRES1, m1) ||
       !read_u16_(REG_MRES2, m2) ||
       !read_u16_(REG_MRES3, m3)) {
-    ESP_LOGW(TAG, "Failed to read result registers");
+    ESP_LOGW(TAG, "Failed to read MRES registers");
     return;
   }
 
@@ -38,13 +38,22 @@ void AS7331Component::update() {
   if (uvc_irr_) uvc_irr_->publish_state(m3 * uvc_mult_);
 }
 
+bool AS7331Component::write_cfg_() {
+  uint8_t creg1 = (gain_ << 4) | (conv_time_ & 0x0F);
+  if (!this->write_byte(REG_CREG1, creg1)) return false;
+
+  uint8_t creg2 = divider_ & 0x07;
+  if (en_div_) creg2 |= 0x08;
+  if (!this->write_byte(REG_CREG2, creg2)) return false;
+
+  uint8_t creg3 = (cclk_ & 0x03) | ((meas_mode_ & 0x03) << 6);
+  if (!this->write_byte(REG_CREG3, creg3)) return false;
+
+  return true;
+}
+
 bool AS7331Component::start_measurement_() {
-  uint8_t osr = 0;
-  if (!this->read_byte(REG_OSR, &osr)) return false;
-
-  osr = (osr & ~OSR_DOS_MASK) | DOS_MEAS;
-  osr |= OSR_SS;
-
+  uint8_t osr = DOS_MEAS | OSR_SS;
   return this->write_byte(REG_OSR, osr);
 }
 
