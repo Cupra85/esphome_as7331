@@ -3,16 +3,18 @@ import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
     CONF_ID,
-    CONF_UVA,
-    CONF_UVB,
-    CONF_UVC,
     CONF_TEMPERATURE,
     DEVICE_CLASS_TEMPERATURE,
     STATE_CLASS_MEASUREMENT,
     UNIT_CELSIUS,
 )
 
+# Eigene Keys (NICHT aus esphome.const importieren!)
+CONF_UVA = "uva"
+CONF_UVB = "uvb"
+CONF_UVC = "uvc"
 CONF_OUTCONV = "outconv"
+
 CONF_GAIN = "gain"
 CONF_CONVERSION_TIME = "conversion_time"
 CONF_CCLK = "cclk"
@@ -21,11 +23,14 @@ CONF_DIVIDER = "divider"
 CONF_ENABLE_DIVIDER = "enable_divider"
 CONF_TEMP_CONV_ENABLED = "temp_conversion_enabled"
 
+DEPENDENCIES = ["i2c"]
+
 as7331_ns = cg.esphome_ns.namespace("as7331")
 AS7331Component = as7331_ns.class_(
     "AS7331Component", cg.PollingComponent, i2c.I2CDevice
 )
 
+# Mappings (Enums)
 GAIN_MAP = {
     2048: 0, 1024: 1, 512: 2, 256: 3, 128: 4, 64: 5,
     32: 6, 16: 7, 8: 8, 4: 9, 2: 10, 1: 11,
@@ -96,6 +101,7 @@ CONFIG_SCHEMA = cv.All(
 
             cv.Optional(CONF_ENABLE_DIVIDER, default=False): cv.boolean,
             cv.Optional(CONF_DIVIDER, default=2): cv.one_of(*DIVIDER_MAP.keys(), int=True),
+
             cv.Optional(CONF_TEMP_CONV_ENABLED, default=True): cv.boolean,
         }
     )
@@ -136,6 +142,5 @@ async def to_code(config):
     cg.add(var.set_divider(DIVIDER_MAP[config[CONF_DIVIDER]]))
     cg.add(var.set_temp_conversion_enabled(config[CONF_TEMP_CONV_ENABLED]))
 
-
-# >>> ZWINGEND ERFORDERLICH <<<
+# Sensor-Plattform registrieren
 PLATFORM_SCHEMA = CONFIG_SCHEMA
