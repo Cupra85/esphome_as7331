@@ -1,46 +1,84 @@
 #include "as7331.h"
-#include <cmath>
+#include "esphome/core/log.h"
 
 namespace esphome {
 namespace as7331 {
 
-// Kalibrierfaktoren (µW/cm² pro Count)
-static constexpr float K_UVA = 0.030f;
-static constexpr float K_UVB = 0.004f;
-static constexpr float K_UVC = 0.001f;
+static const char *TAG = "as7331";
 
-void AS7331Component::update() {
-  uint16_t raw_uva = this->read_uva();
-  uint16_t raw_uvb = this->read_uvb();
-  uint16_t raw_uvc = this->read_uvc();
-
-  if (uva_raw_) uva_raw_->publish_state(raw_uva);
-  if (uvb_raw_) uvb_raw_->publish_state(raw_uvb);
-  if (uvc_raw_) uvc_raw_->publish_state(raw_uvc);
-
-  float uva = raw_uva * K_UVA * 0.01f;
-  float uvb = raw_uvb * K_UVB * 0.01f;
-  float uvc = raw_uvc * K_UVC * 0.01f;
-
-  if (uva < 0 || std::isnan(uva)) uva = 0;
-  if (uvb < 0 || std::isnan(uvb)) uvb = 0;
-  if (uvc < 0 || std::isnan(uvc)) uvc = 0;
-
-  if (uva_) uva_->publish_state(uva);
-  if (uvb_) uvb_->publish_state(uvb);
-  if (uvc_) uvc_->publish_state(uvc);
-
-  if (uv_index_) {
-    float uv_index = (uva * 0.025f + uvb) / 0.025f;
-    if (uv_index < 0 || std::isnan(uv_index)) uv_index = 0;
-    uv_index_->publish_state(uv_index);
-  }
+void AS7331Component::setup() {
+  // Schreibe Konfiguration (Gain, Integration, Divider, Mode)
+  write_cfg_();
 }
 
-// Platzhalter – hier bleibt deine bestehende I²C-Logik
-uint16_t AS7331Component::read_uva() { return 0; }
-uint16_t AS7331Component::read_uvb() { return 0; }
-uint16_t AS7331Component::read_uvc() { return 0; }
+void AS7331Component::update() {
+  // Messung starten (CONT oder CMD – harmlos auch in CONT)
+  start_measurement_();
+
+  // Kurze Wartezeit, damit Register sicher aktualisiert sind
+  delay(5);
+
+  uint16_t m1 = 0;
+  uint16_t m2 = 0;
+  uint16_t m3 = 0;
+
+  // Register IMMER lesen (keine Blockade mehr)
+  if (!read_u16_(REG_MRES1, m1) ||
+      !read_u16_(REG_MRES2, m2) ||
+      !read_u16_(REG_MRES3, m3)) {
+    ESP_LOGW(TAG, "Failed to read AS7331 measurement registers");
+    return;
+  }
+
+  // Cache aktualisieren
+  last_uva_ = m1;
+  last_uvb_ = m2;
+  last_uvc_ = m3;
+
+  // Raw Counts publishen
+  if (uva_) uva_->publish_state(m1);
+  if (uvb_) uvb_->publish_state(m2);
+  if (uvc_) uvc_->publish_state(m3);
+
+  // Skalierte Werte (µW/cm²) publishen
+  if (uva_irr_) uva_irr_->publish_state(m1 * uva_mult_);
+  if (uvb_irr_) uvb_irr_->publish_state(m2 * uvb_mult_);
+  if (uvc_irr_) uvc_irr_->publish_state(m3 * uvc_mult_);
+}
+
+bool AS7331Component::write_cfg_() {
+  // CREG1: Gain (High-Nibble) | Integration Time (Low-Nibble)
+  uint8_t creg1 = (gain_ << 4) | (conv_time_ & 0x0F);
+
+  // CREG2: Divider + Enable
+  uint8_t creg2 = (divider_ & 0x07);
+  if (en_div_) creg2 |= 0x08;
+
+  // CREG3: CCLK + Measurement Mode
+  uint8_t creg3 = (cclk_ & 0x03) | ((meas_mode_ & 0x03) << 6);
+
+  if (!write_byte(REG_CREG1, creg1)) return false;
+  if (!write_byte(REG_CREG2, creg2)) return false;
+  if (!write_byte(REG_CREG3, creg3)) return false;
+
+  return true;
+}
+
+bool AS7331Component::start_measurement_() {
+  // DOS = MEAS, SS = Start
+  return write_byte(REG_OSR, DOS_MEAS | OSR_SS);
+}
+
+bool AS7331Component::read_u16_(uint8_t reg, uint16_t &out) {
+  uint8_t data[2] = {0, 0};
+  if (!read_bytes(reg, data, 2)) {
+    return false;
+  }
+
+  // Little endian
+  out = (static_cast<uint16_t>(data[1]) << 8) | data[0];
+  return true;
+}
 
 }  // namespace as7331
 }  // namespace esphome
