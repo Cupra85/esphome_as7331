@@ -17,30 +17,29 @@ AS7331Component = as7331_ns.class_(
     i2c.I2CDevice,
 )
 
-# ❗❗ DAS IST DER ENTSCHEIDENDE TEIL ❗❗
-cg.add_global(as7331_ns.using)
-cg.add_library("as7331", None)
-cg.add_define("USE_AS7331")
-
-CONFIG_SCHEMA = (
+PLATFORM_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
+
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
+
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
+
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
+
             cv.Optional("uv_index"): sensor.sensor_schema(
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=2,
