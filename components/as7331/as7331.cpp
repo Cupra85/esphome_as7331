@@ -6,86 +6,78 @@ namespace as7331 {
 
 static const char *TAG = "as7331";
 
-/* === AS7331 REGISTER MAP (WIE IM FUNKTIONIERENDEN REPO) === */
-static const uint8_t REG_OSR    = 0x00;
-static const uint8_t REG_CREG1  = 0x06;
-static const uint8_t REG_CREG2  = 0x07;
-static const uint8_t REG_CREG3  = 0x08;
-
-static const uint8_t REG_MRES1  = 0x10; // UVA
-static const uint8_t REG_MRES2  = 0x12; // UVB
-static const uint8_t REG_MRES3  = 0x14; // UVC
-
-/* === OSR bits === */
-static const uint8_t DOS_MEAS = 0x40;
-static const uint8_t OSR_SS   = 0x20;
-
-/* === CONFIGURATION === */
-
-void AS7331Component::configure_() {
-  ESP_LOGI(TAG, "Configuring AS7331");
-
-  // CREG1: GAIN[7:4] | TIME[3:0]
-  uint8_t creg1 = ((gain_ & 0x0F) << 4) | (integration_time_ & 0x0F);
-  write_byte(REG_CREG1, creg1);
-
-  // CREG2: Divider (default 0)
-  write_byte(REG_CREG2, 0x00);
-
-  // CREG3: Measurement mode CONT (0)
-  write_byte(REG_CREG3, 0x00);
-}
-
-/* === MEASUREMENT CONTROL === */
-
-void AS7331Component::start_measurement_() {
-  // Trigger measurement (CONT mode already set)
-  write_byte(REG_OSR, DOS_MEAS | OSR_SS);
-  measuring_ = true;
-  ESP_LOGI(TAG, "AS7331 measurement started (CONT)");
-}
-
-void AS7331Component::stop_measurement_() {
-  // Stop measurement
-  write_byte(REG_OSR, 0x00);
-  measuring_ = false;
-  ESP_LOGI(TAG, "AS7331 measurement stopped");
-}
-
-void AS7331Component::set_measurement_enabled(bool enable) {
-  if (enable && !measuring_) {
-    start_measurement_();
-  } else if (!enable && measuring_) {
-    stop_measurement_();
-  }
-}
-
-/* === ESPHOME LIFECYCLE === */
-
 void AS7331Component::setup() {
-  ESP_LOGI(TAG, "Setting up AS7331");
-
-  configure_();
-
-  // AUTO START CONT MODE
-  start_measurement_();
+  // Schreibe Konfiguration (Gain, Integration, Divider, Mode)
+  write_cfg_();
 }
 
 void AS7331Component::update() {
-  if (!measuring_) return;
+  // Messung starten (CONT oder CMD – harmlos auch in CONT)
+  start_measurement_();
 
-  uint16_t uva = read_byte(REG_MRES1) << 8 | read_byte(REG_MRES1 + 1);
-  uint16_t uvb = read_byte(REG_MRES2) << 8 | read_byte(REG_MRES2 + 1);
-  uint16_t uvc = read_byte(REG_MRES3) << 8 | read_byte(REG_MRES3 + 1);
+  // Kurze Wartezeit, damit Register sicher aktualisiert sind
+  delay(5);
 
-  if (uva_) uva_->publish_state(uva);
-  if (uvb_) uvb_->publish_state(uvb);
-  if (uvc_) uvc_->publish_state(uvc);
+  uint16_t m1 = 0;
+  uint16_t m2 = 0;
+  uint16_t m3 = 0;
 
-  if (uvi_) {
-    float uvi = (uva * 0.0029f) + (uvb * 0.058f);
-    uvi_->publish_state(uvi);
+  // Register IMMER lesen (keine Blockade mehr)
+  if (!read_u16_(REG_MRES1, m1) ||
+      !read_u16_(REG_MRES2, m2) ||
+      !read_u16_(REG_MRES3, m3)) {
+    ESP_LOGW(TAG, "Failed to read AS7331 measurement registers");
+    return;
   }
+
+  // Cache aktualisieren
+  last_uva_ = m1;
+  last_uvb_ = m2;
+  last_uvc_ = m3;
+
+  // Raw Counts publishen
+  if (uva_) uva_->publish_state(m1);
+  if (uvb_) uvb_->publish_state(m2);
+  if (uvc_) uvc_->publish_state(m3);
+
+  // Skalierte Werte (µW/cm²) publishen
+  if (uva_irr_) uva_irr_->publish_state(m1 * uva_mult_);
+  if (uvb_irr_) uvb_irr_->publish_state(m2 * uvb_mult_);
+  if (uvc_irr_) uvc_irr_->publish_state(m3 * uvc_mult_);
+}
+
+bool AS7331Component::write_cfg_() {
+  // CREG1: Gain (High-Nibble) | Integration Time (Low-Nibble)
+  uint8_t creg1 = (gain_ << 4) | (conv_time_ & 0x0F);
+
+  // CREG2: Divider + Enable
+  uint8_t creg2 = (divider_ & 0x07);
+  if (en_div_) creg2 |= 0x08;
+
+  // CREG3: CCLK + Measurement Mode
+  uint8_t creg3 = (cclk_ & 0x03) | ((meas_mode_ & 0x03) << 6);
+
+  if (!write_byte(REG_CREG1, creg1)) return false;
+  if (!write_byte(REG_CREG2, creg2)) return false;
+  if (!write_byte(REG_CREG3, creg3)) return false;
+
+  return true;
+}
+
+bool AS7331Component::start_measurement_() {
+  // DOS = MEAS, SS = Start
+  return write_byte(REG_OSR, DOS_MEAS | OSR_SS);
+}
+
+bool AS7331Component::read_u16_(uint8_t reg, uint16_t &out) {
+  uint8_t data[2] = {0, 0};
+  if (!read_bytes(reg, data, 2)) {
+    return false;
+  }
+
+  // Little endian
+  out = (static_cast<uint16_t>(data[1]) << 8) | data[0];
+  return true;
 }
 
 }  // namespace as7331
