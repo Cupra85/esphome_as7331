@@ -13,19 +13,20 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void set_gain(uint16_t gain) { gain_ = gain; }
   void set_integration_time(uint16_t time_ms) { integration_time_ms_ = time_ms; }
 
-  // Sensors
+  // Sensor setter
   void set_uva_sensor(sensor::Sensor *s) { uva_ = s; }
   void set_uvb_sensor(sensor::Sensor *s) { uvb_ = s; }
   void set_uvc_sensor(sensor::Sensor *s) { uvc_ = s; }
   void set_uvi_sensor(sensor::Sensor *s) { uvi_ = s; }
 
-  // Called by switch
+  // Switch API
   void set_measurement_enabled(bool enable);
 
   void setup() override;
   void update() override;
 
  protected:
+  // Internal helpers
   bool configure_();
   bool start_measurement_();
   bool stop_measurement_();
