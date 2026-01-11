@@ -7,7 +7,7 @@
 namespace esphome {
 namespace as7331 {
 
-class AS7331Component : public Component, public i2c::I2CDevice {
+class AS7331Component : public PollingComponent, public i2c::I2CDevice {
  public:
   void set_uva_sensor(sensor::Sensor *s) { uva_ = s; }
   void set_uvb_sensor(sensor::Sensor *s) { uvb_ = s; }
@@ -16,7 +16,6 @@ class AS7331Component : public Component, public i2c::I2CDevice {
 
   void setup() override;
   void update() override;
-  float get_setup_priority() const override { return setup_priority::DATA; }
 
  protected:
   sensor::Sensor *uva_{nullptr};
@@ -24,7 +23,8 @@ class AS7331Component : public Component, public i2c::I2CDevice {
   sensor::Sensor *uvc_{nullptr};
   sensor::Sensor *uvi_{nullptr};
 
-  bool read_channels_(float &uva, float &uvb, float &uvc);
+  bool read_raw_(uint16_t &uva, uint16_t &uvb, uint16_t &uvc);
+  bool init_device_();
 };
 
 }  // namespace as7331
