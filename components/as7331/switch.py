@@ -4,9 +4,13 @@ from esphome.components import switch
 
 from .sensor import AS7331Component
 
-DEPENDENCIES = ["as7331"]
+# Wichtig: keine Self-Dependency
+DEPENDENCIES = []
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
+
+# Header für die C++-Klasse sicher einbinden
+cg.add_global(cg.RawExpression('#include "esphome/components/as7331/switch.h"'))
 
 AS7331Switch = as7331_ns.class_(
     "AS7331Switch",
@@ -15,7 +19,7 @@ AS7331Switch = as7331_ns.class_(
 
 CONFIG_SCHEMA = switch.switch_schema(AS7331Switch).extend(
     {
-        cv.GenerateID("as7331_id"): cv.use_id(AS7331Component),
+        cv.Required("as7331_id"): cv.use_id(AS7331Component),
     }
 )
 
