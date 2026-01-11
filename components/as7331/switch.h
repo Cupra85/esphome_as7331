@@ -10,10 +10,8 @@ class AS7331Switch : public switch_::Switch {
  public:
   void set_parent(AS7331Component *parent) {
     parent_ = parent;
-    if (parent_ != nullptr) {
-      parent_->set_measurement_enabled(true);
-      publish_state(true);  // default ON at boot
-    }
+    // NICHT automatisch stoppen!
+    publish_state(parent_ != nullptr);
   }
 
  protected:
