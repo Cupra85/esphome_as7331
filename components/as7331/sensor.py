@@ -18,19 +18,19 @@ PLATFORM_SCHEMA = (
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
             cv.Optional("uva"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement="W/m2",
                 icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
 
             cv.Optional("uvb"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement="W/m2",
                 icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
 
             cv.Optional("uvc"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement="W/m2",
                 icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
