@@ -2,40 +2,37 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 
-CONF_UVA = "uva"
-CONF_UVB = "uvb"
-CONF_UVC = "uvc"
-CONF_UV_INDEX = "uv_index"
-
 DEPENDENCIES = ["i2c"]
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
-AS7331Component = as7331_ns.class_("AS7331Component", cg.PollingComponent, i2c.I2CDevice)
+AS7331Component = as7331_ns.class_(
+    "AS7331Component",
+    cg.PollingComponent,
+    i2c.I2CDevice,
+)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
-            cv.Optional(CONF_UVA): sensor.sensor_schema(
+            cv.Optional("gain", default=128): cv.int_range(min=1, max=2048),
+            cv.Optional("integration_time", default=64): cv.int_range(min=1, max=512),
+
+            cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m2",
                 accuracy_decimals=3,
-                icon="mdi:white-balance-sunny",
             ),
-            cv.Optional(CONF_UVB): sensor.sensor_schema(
+            cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m2",
                 accuracy_decimals=3,
-                icon="mdi:white-balance-sunny",
             ),
-            cv.Optional(CONF_UVC): sensor.sensor_schema(
+            cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m2",
                 accuracy_decimals=3,
-                icon="mdi:white-balance-sunny",
             ),
-            cv.Optional(CONF_UV_INDEX): sensor.sensor_schema(
-                unit_of_measurement="",
+            cv.Optional("uv_index"): sensor.sensor_schema(
                 accuracy_decimals=2,
-                icon="mdi:weather-sunny-alert",
             ),
         }
     )
@@ -48,18 +45,14 @@ async def to_code(config):
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
-    if CONF_UVA in config:
-        s = await sensor.new_sensor(config[CONF_UVA])
-        cg.add(var.set_uva_sensor(s))
+    cg.add(var.set_gain(config["gain"]))
+    cg.add(var.set_integration_time(config["integration_time"]))
 
-    if CONF_UVB in config:
-        s = await sensor.new_sensor(config[CONF_UVB])
-        cg.add(var.set_uvb_sensor(s))
-
-    if CONF_UVC in config:
-        s = await sensor.new_sensor(config[CONF_UVC])
-        cg.add(var.set_uvc_sensor(s))
-
-    if CONF_UV_INDEX in config:
-        s = await sensor.new_sensor(config[CONF_UV_INDEX])
-        cg.add(var.set_uvi_sensor(s))
+    if "uva" in config:
+        cg.add(var.set_uva_sensor(await sensor.new_sensor(config["uva"])))
+    if "uvb" in config:
+        cg.add(var.set_uvb_sensor(await sensor.new_sensor(config["uvb"])))
+    if "uvc" in config:
+        cg.add(var.set_uvc_sensor(await sensor.new_sensor(config["uvc"])))
+    if "uv_index" in config:
+        cg.add(var.set_uvi_sensor(await sensor.new_sensor(config["uv_index"])))
