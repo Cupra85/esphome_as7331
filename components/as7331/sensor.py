@@ -37,7 +37,7 @@ CONFIG_SCHEMA = (
         }
     )
     .extend(cv.polling_component_schema("10s"))
-    .extend(i2c.i2c_device_schema(0x77))
+    .extend(i2c.i2c_device_schema(0x74))
 )
 
 async def to_code(config):
