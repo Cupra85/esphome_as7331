@@ -10,8 +10,8 @@ namespace as7331 {
 class AS7331Component : public PollingComponent, public i2c::I2CDevice {
  public:
   // YAML → C++
-  void set_gain(uint16_t gain) { gain_ = gain; }
-  void set_integration_time(uint16_t time_ms) { integration_time_ms_ = time_ms; }
+  void set_gain(uint8_t gain) { gain_ = gain; }
+  void set_integration_time(uint8_t time) { integration_time_ = time; }
 
   // Sensor setter
   void set_uva_sensor(sensor::Sensor *s) { uva_ = s; }
@@ -19,20 +19,19 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void set_uvc_sensor(sensor::Sensor *s) { uvc_ = s; }
   void set_uvi_sensor(sensor::Sensor *s) { uvi_ = s; }
 
-  // Switch API
+  // Switch control
   void set_measurement_enabled(bool enable);
 
   void setup() override;
   void update() override;
 
  protected:
-  bool configure_();
-  bool start_measurement_();   // CONT start
-  bool stop_measurement_();    // power-down
-  bool read_raw_(uint16_t &uva, uint16_t &uvb, uint16_t &uvc);
+  void configure_();
+  void start_measurement_();
+  void stop_measurement_();
 
-  uint16_t gain_{128};
-  uint16_t integration_time_ms_{64};
+  uint8_t gain_{4};              // encoded gain value
+  uint8_t integration_time_{6};  // encoded integration time
   bool measuring_{false};
 
   sensor::Sensor *uva_{nullptr};
@@ -40,10 +39,6 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   sensor::Sensor *uvc_{nullptr};
   sensor::Sensor *uvi_{nullptr};
 };
-
-}  // namespace as7331
-}  // namespace esphome
-
 
 }  // namespace as7331
 }  // namespace esphome
