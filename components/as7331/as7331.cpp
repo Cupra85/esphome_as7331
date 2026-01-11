@@ -6,99 +6,50 @@ namespace as7331 {
 
 static const char *TAG = "as7331";
 
-/* === AS7331 Register Map (DS001047) === */
-static const uint8_t REG_OSR      = 0x00;
-static const uint8_t REG_CREG1    = 0x01;
-static const uint8_t REG_MEAS_CFG = 0x02;
-static const uint8_t REG_DATA     = 0x10;
+/* === AS7331 REGISTER MAP (WIE IM FUNKTIONIERENDEN REPO) === */
+static const uint8_t REG_OSR    = 0x00;
+static const uint8_t REG_CREG1  = 0x06;
+static const uint8_t REG_CREG2  = 0x07;
+static const uint8_t REG_CREG3  = 0x08;
 
-/* === Helpers === */
+static const uint8_t REG_MRES1  = 0x10; // UVA
+static const uint8_t REG_MRES2  = 0x12; // UVB
+static const uint8_t REG_MRES3  = 0x14; // UVC
 
-// Gain: 1…2048 → encoded 11…0
-static uint8_t gain_to_reg(uint16_t gain) {
-  uint8_t reg = 11;
-  while (gain > 1 && reg > 0) {
-    gain >>= 1;
-    reg--;
-  }
-  return reg;
+/* === OSR bits === */
+static const uint8_t DOS_MEAS = 0x40;
+static const uint8_t OSR_SS   = 0x20;
+
+/* === CONFIGURATION === */
+
+void AS7331Component::configure_() {
+  ESP_LOGI(TAG, "Configuring AS7331");
+
+  // CREG1: GAIN[7:4] | TIME[3:0]
+  uint8_t creg1 = ((gain_ & 0x0F) << 4) | (integration_time_ & 0x0F);
+  write_byte(REG_CREG1, creg1);
+
+  // CREG2: Divider (default 0)
+  write_byte(REG_CREG2, 0x00);
+
+  // CREG3: Measurement mode CONT (0)
+  write_byte(REG_CREG3, 0x00);
 }
 
-// Integration time ms → log2(ms)
-static uint8_t time_to_reg(uint16_t ms) {
-  uint8_t reg = 0;
-  while (ms > 1 && reg < 15) {
-    ms >>= 1;
-    reg++;
-  }
-  return reg;
-}
+/* === MEASUREMENT CONTROL === */
 
-/* === Configuration === */
-
-bool AS7331Component::configure_() {
-  ESP_LOGI(TAG, "Configuring AS7331 (gain=%u, int=%ums)", gain_, integration_time_ms_);
-
-  uint8_t gain_reg = gain_to_reg(gain_);
-  uint8_t time_reg = time_to_reg(integration_time_ms_);
-  uint8_t creg1 = (gain_reg << 4) | (time_reg & 0x0F);
-
-  // Gain + Integration Time
-  if (!write_byte(REG_CREG1, creg1)) {
-    ESP_LOGE(TAG, "CREG1 write failed");
-    return false;
-  }
-
-  // Enable UVA + UVB + UVC ADCs
-  if (!write_byte(REG_MEAS_CFG, 0x07)) {
-    ESP_LOGE(TAG, "MEAS_CFG write failed");
-    return false;
-  }
-
-  ESP_LOGI(TAG, "AS7331 channels enabled");
-  return true;
-}
-
-/* === Measurement control (CONT MODE, DATASHEET CORRECT) === */
-
-bool AS7331Component::start_measurement_() {
-  // 1) Enter measurement mode (PD=0, DOS=1)
-  if (!write_byte(REG_OSR, 0x40)) {   // 0b01000000
-    ESP_LOGE(TAG, "Failed to enter measurement mode");
-    return false;
-  }
-
-  delay(2);
-
-  // 2) Trigger first measurement (SS=1)
-  if (!write_byte(REG_OSR, 0x60)) {   // 0b01100000
-    ESP_LOGE(TAG, "Failed to trigger measurement");
-    return false;
-  }
-
-  delay(2);
-
-  // 3) Lock continuous run state (DOS=1, SS=0) and STAY there
-  if (!write_byte(REG_OSR, 0x40)) {
-    ESP_LOGE(TAG, "Failed to lock continuous mode");
-    return false;
-  }
-
+void AS7331Component::start_measurement_() {
+  // Trigger measurement (CONT mode already set)
+  write_byte(REG_OSR, DOS_MEAS | OSR_SS);
   measuring_ = true;
-  ESP_LOGI(TAG, "AS7331 continuous measurement active");
-  return true;
+  ESP_LOGI(TAG, "AS7331 measurement started (CONT)");
 }
 
-bool AS7331Component::stop_measurement_() {
-  // Power-down (PD=1)
-  if (!write_byte(REG_OSR, 0x80)) {
-    ESP_LOGE(TAG, "Power-down failed");
-    return false;
-  }
-
+void AS7331Component::stop_measurement_() {
+  // Stop measurement
+  write_byte(REG_OSR, 0x00);
   measuring_ = false;
-  ESP_LOGI(TAG, "AS7331 powered down");
-  return true;
+  ESP_LOGI(TAG, "AS7331 measurement stopped");
 }
 
 void AS7331Component::set_measurement_enabled(bool enable) {
@@ -109,43 +60,23 @@ void AS7331Component::set_measurement_enabled(bool enable) {
   }
 }
 
-/* === ESPHome lifecycle === */
+/* === ESPHOME LIFECYCLE === */
 
 void AS7331Component::setup() {
   ESP_LOGI(TAG, "Setting up AS7331");
 
-  if (!configure_()) {
-    ESP_LOGE(TAG, "AS7331 configuration failed");
-    return;
-  }
+  configure_();
 
-  // AUTO-START CONT MODE AFTER BOOT
+  // AUTO START CONT MODE
   start_measurement_();
-}
-
-bool AS7331Component::read_raw_(uint16_t &u, uint16_t &b, uint16_t &c) {
-  uint8_t buf[6];
-  if (!read_bytes(REG_DATA, buf, 6)) {
-    ESP_LOGE(TAG, "Read failed");
-    return false;
-  }
-
-  u = (uint16_t(buf[0]) << 8) | buf[1];
-  b = (uint16_t(buf[2]) << 8) | buf[3];
-  c = (uint16_t(buf[4]) << 8) | buf[5];
-  return true;
 }
 
 void AS7331Component::update() {
   if (!measuring_) return;
 
-  uint16_t ru, rb, rc;
-  if (!read_raw_(ru, rb, rc)) return;
-
-  // Placeholder scaling (calibration can be added later)
-  float uva = ru * 0.001f;
-  float uvb = rb * 0.001f;
-  float uvc = rc * 0.001f;
+  uint16_t uva = read_byte(REG_MRES1) << 8 | read_byte(REG_MRES1 + 1);
+  uint16_t uvb = read_byte(REG_MRES2) << 8 | read_byte(REG_MRES2 + 1);
+  uint16_t uvc = read_byte(REG_MRES3) << 8 | read_byte(REG_MRES3 + 1);
 
   if (uva_) uva_->publish_state(uva);
   if (uvb_) uvb_->publish_state(uvb);
