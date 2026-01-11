@@ -42,28 +42,33 @@ void AS7331Component::setup() {
   start_measurement_();
 }
 
-/* === FIXED UPDATE === */
-
 void AS7331Component::update() {
+  uint8_t buf[2];
   uint16_t uva, uvb, uvc;
 
-  if (!read_uint16(REG_MRES1, &uva)) {
+  if (!read_bytes(REG_MRES1, buf, 2)) {
     ESP_LOGW(TAG, "Failed to read UVA");
     return;
   }
-  if (!read_uint16(REG_MRES2, &uvb)) {
+  uva = (uint16_t(buf[0]) << 8) | buf[1];
+
+  if (!read_bytes(REG_MRES2, buf, 2)) {
     ESP_LOGW(TAG, "Failed to read UVB");
     return;
   }
-  if (!read_uint16(REG_MRES3, &uvc)) {
+  uvb = (uint16_t(buf[0]) << 8) | buf[1];
+
+  if (!read_bytes(REG_MRES3, buf, 2)) {
     ESP_LOGW(TAG, "Failed to read UVC");
     return;
   }
+  uvc = (uint16_t(buf[0]) << 8) | buf[1];
 
   if (uva_) uva_->publish_state(uva);
   if (uvb_) uvb_->publish_state(uvb);
   if (uvc_) uvc_->publish_state(uvc);
 }
+
 
 }  // namespace as7331
 }  // namespace esphome
