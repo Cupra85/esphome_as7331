@@ -3,25 +3,31 @@ import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import UNIT_WATT_PER_SQUARE_METER, ICON_WEATHER_SUNNY
 
+DEPENDENCIES = ["i2c"]
+
 as7331_ns = cg.esphome_ns.namespace("as7331")
-AS7331Component = as7331_ns.class_("AS7331Component", cg.Component, i2c.I2CDevice)
+AS7331Component = as7331_ns.class_(
+    "AS7331Component",
+    cg.Component,
+    i2c.I2CDevice,
+)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
             cv.Optional("uva"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
-                unit_of_measurement="W/m²",
+                unit_of_measurement=UNIT_WATT_PER_SQUARE_METER,
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=3,
             ),
