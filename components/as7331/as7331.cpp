@@ -6,14 +6,14 @@ namespace as7331 {
 
 static const char *const TAG = "as7331";
 
-/* === AS7331 Register Map (Datasheet) === */
-static const uint8_t REG_OSR      = 0x00;
-static const uint8_t REG_CREG1    = 0x01;
-static const uint8_t REG_DATA     = 0x10;
+/* === AS7331 Register Map === */
+static const uint8_t REG_OSR   = 0x00;
+static const uint8_t REG_CREG1 = 0x01;
+static const uint8_t REG_DATA  = 0x10;
 
 /* === Helpers === */
 
-// Gain: 1…2048 → register value 11…0
+// Gain: 1…2048 → reg 11…0
 static uint8_t gain_to_reg(uint16_t gain) {
   uint8_t reg = 11;
   while (gain > 1 && reg > 0) {
@@ -23,7 +23,7 @@ static uint8_t gain_to_reg(uint16_t gain) {
   return reg;
 }
 
-// Integration time: ms → log2(ms)
+// Integration time ms → log2(ms)
 static uint8_t time_to_reg(uint16_t ms) {
   uint8_t reg = 0;
   while (ms > 1 && reg < 15) {
@@ -33,7 +33,7 @@ static uint8_t time_to_reg(uint16_t ms) {
   return reg;
 }
 
-/* === Device configuration === */
+/* === Configuration === */
 
 bool AS7331Component::configure_() {
   ESP_LOGI(TAG, "Configuring AS7331 (gain=%u, int=%ums)", gain_, integration_time_ms_);
@@ -41,14 +41,12 @@ bool AS7331Component::configure_() {
   uint8_t gain_reg = gain_to_reg(gain_);
   uint8_t time_reg = time_to_reg(integration_time_ms_);
 
-  // CREG1: GAIN[7:4], TIME[3:0]
   uint8_t creg1 = (gain_reg << 4) | (time_reg & 0x0F);
 
   if (!write_byte(REG_CREG1, creg1)) {
-    ESP_LOGE(TAG, "Failed to write CREG1");
+    ESP_LOGE(TAG, "CREG1 write failed");
     return false;
   }
-
   return true;
 }
 
@@ -60,19 +58,17 @@ bool AS7331Component::start_measurement_() {
     ESP_LOGE(TAG, "Failed to start measurement");
     return false;
   }
-
   measuring_ = true;
-  ESP_LOGI(TAG, "Measurement started (continuous)");
+  ESP_LOGI(TAG, "Measurement started");
   return true;
 }
 
 bool AS7331Component::stop_measurement_() {
-  // SS=0 → stop, remain powered
+  // SS=0
   if (!write_byte(REG_OSR, 0x03)) {
     ESP_LOGE(TAG, "Failed to stop measurement");
     return false;
   }
-
   measuring_ = false;
   ESP_LOGI(TAG, "Measurement stopped");
   return true;
@@ -86,18 +82,19 @@ void AS7331Component::set_measurement_enabled(bool enable) {
   }
 }
 
-/* === ESPHome hooks === */
+/* === ESPHome lifecycle === */
 
 void AS7331Component::setup() {
   ESP_LOGI(TAG, "Setting up AS7331");
   if (configure_()) {
     start_measurement_();
+    delay(10);   // allow first integration
+    update();    // publish first values immediately
   }
 }
 
 bool AS7331Component::read_raw_(uint16_t &u, uint16_t &b, uint16_t &c) {
   uint8_t buf[6];
-
   if (!read_bytes(REG_DATA, buf, 6)) {
     ESP_LOGE(TAG, "Read failed");
     return false;
@@ -106,21 +103,16 @@ bool AS7331Component::read_raw_(uint16_t &u, uint16_t &b, uint16_t &c) {
   u = (buf[0] << 8) | buf[1];
   b = (buf[2] << 8) | buf[3];
   c = (buf[4] << 8) | buf[5];
-
   return true;
 }
 
 void AS7331Component::update() {
-  if (!measuring_) {
-    return;
-  }
+  if (!measuring_) return;
 
   uint16_t ru, rb, rc;
-  if (!read_raw_(ru, rb, rc)) {
-    return;
-  }
+  if (!read_raw_(ru, rb, rc)) return;
 
-  // Placeholder scaling (replace with datasheet calibration)
+  // Placeholder scaling (datasheet calibration can be added later)
   float uva = ru * 0.001f;
   float uvb = rb * 0.001f;
   float uvc = rc * 0.001f;
