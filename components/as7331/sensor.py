@@ -7,7 +7,6 @@ from esphome.const import (
 )
 
 DEPENDENCIES = ["i2c"]
-AUTO_LOAD = ["sensor"]
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
 
@@ -18,7 +17,7 @@ AS7331Component = as7331_ns.class_(
 )
 
 PLATFORM_SCHEMA = (
-    cv.Schema(
+    sensor.PLATFORM_SCHEMA.extend(
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
