@@ -1,7 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
-from esphome.const import ICON_WEATHER_SUNNY
 
 DEPENDENCIES = ["i2c"]
 
@@ -20,24 +19,24 @@ PLATFORM_SCHEMA = (
 
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                icon=ICON_WEATHER_SUNNY,
+                icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
 
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                icon=ICON_WEATHER_SUNNY,
+                icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
 
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                icon=ICON_WEATHER_SUNNY,
+                icon="mdi:white-balance-sunny",
                 accuracy_decimals=3,
             ),
 
             cv.Optional("uv_index"): sensor.sensor_schema(
-                icon=ICON_WEATHER_SUNNY,
+                icon="mdi:weather-sunny-alert",
                 accuracy_decimals=2,
             ),
         }
