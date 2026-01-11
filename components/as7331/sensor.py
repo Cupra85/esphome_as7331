@@ -1,16 +1,26 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
-from esphome.const import UNIT_WATT_PER_SQUARE_METER, ICON_WEATHER_SUNNY
+from esphome.const import (
+    UNIT_WATT_PER_SQUARE_METER,
+    ICON_WEATHER_SUNNY,
+)
 
 DEPENDENCIES = ["i2c"]
+AUTO_LOAD = ["sensor"]
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
+
 AS7331Component = as7331_ns.class_(
     "AS7331Component",
     cg.Component,
     i2c.I2CDevice,
 )
+
+# ❗❗ DAS IST DER ENTSCHEIDENDE TEIL ❗❗
+cg.add_global(as7331_ns.using)
+cg.add_library("as7331", None)
+cg.add_define("USE_AS7331")
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -32,7 +42,6 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=3,
             ),
             cv.Optional("uv_index"): sensor.sensor_schema(
-                unit_of_measurement="",
                 icon=ICON_WEATHER_SUNNY,
                 accuracy_decimals=2,
             ),
