@@ -10,8 +10,7 @@ class AS7331Switch : public switch_::Switch {
  public:
   void set_parent(AS7331Component *parent) {
     parent_ = parent;
-    // NICHT automatisch stoppen!
-    publish_state(parent_ != nullptr);
+    publish_state(parent_ != nullptr);  // ON by default
   }
 
  protected:
