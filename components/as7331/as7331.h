@@ -17,16 +17,15 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void set_uvb_wm2_sensor(sensor::Sensor *s) { uvb_wm2_ = s; }
   void set_uvc_wm2_sensor(sensor::Sensor *s) { uvc_wm2_ = s; }
 
-  void set_gain(uint8_t gain) { gain_ = gain & 0x0F; }
-  void set_int_time(uint8_t t) { int_time_ = t & 0x0F; }
+  void set_gain(uint8_t g) { gain_ = g; }
+  void set_int_time(uint8_t t) { int_time_ = t; }
 
   void setup() override;
   void update() override;
-  void dump_config() override;
 
  protected:
-  uint8_t gain_{10};
-  uint8_t int_time_{6};
+  uint8_t gain_{10};      // 0..11
+  uint8_t int_time_{6};  // 0..7
 
   sensor::Sensor *uva_{nullptr};
   sensor::Sensor *uvb_{nullptr};
