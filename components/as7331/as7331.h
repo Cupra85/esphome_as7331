@@ -13,6 +13,10 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void set_uvb_sensor(sensor::Sensor *s) { uvb_ = s; }
   void set_uvc_sensor(sensor::Sensor *s) { uvc_ = s; }
 
+  void set_uva_wm2_sensor(sensor::Sensor *s) { uva_wm2_ = s; }
+  void set_uvb_wm2_sensor(sensor::Sensor *s) { uvb_wm2_ = s; }
+  void set_uvc_wm2_sensor(sensor::Sensor *s) { uvc_wm2_ = s; }
+
   void set_gain(uint8_t gain) { gain_ = gain & 0x0F; }
   void set_int_time(uint8_t t) { int_time_ = t & 0x0F; }
 
@@ -21,15 +25,16 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void dump_config() override;
 
  protected:
-  bool write_reg_(uint8_t reg, uint8_t value);
-  bool read_results_(uint16_t &uva, uint16_t &uvb, uint16_t &uvc);
-
-  uint8_t gain_{0x0A};      // default wie datasheet reset (1010b)
-  uint8_t int_time_{0x06};  // 64ms (0110b) bei fCLK=1.024MHz
+  uint8_t gain_{10};
+  uint8_t int_time_{6};
 
   sensor::Sensor *uva_{nullptr};
   sensor::Sensor *uvb_{nullptr};
   sensor::Sensor *uvc_{nullptr};
+
+  sensor::Sensor *uva_wm2_{nullptr};
+  sensor::Sensor *uvb_wm2_{nullptr};
+  sensor::Sensor *uvc_wm2_{nullptr};
 };
 
 }  // namespace as7331
