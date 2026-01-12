@@ -8,19 +8,24 @@ DEPENDENCIES = ["i2c"]
 CONF_UVA = "uva"
 CONF_UVB = "uvb"
 CONF_UVC = "uvc"
+CONF_UVA_WM2 = "uva_wm2"
+CONF_UVB_WM2 = "uvb_wm2"
+CONF_UVC_WM2 = "uvc_wm2"
 CONF_GAIN = "gain"
 CONF_INT_TIME = "int_time"
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
-AS7331Component = as7331_ns.class_("AS7331Component", cg.PollingComponent, i2c.I2CDevice)
+AS7331Component = as7331_ns.class_(
+    "AS7331Component", cg.PollingComponent, i2c.I2CDevice
+)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(CONF_ID): cv.declare_id(AS7331Component),
 
-            cv.Optional(CONF_GAIN, default=0x0A): cv.int_range(min=0, max=15),
-            cv.Optional(CONF_INT_TIME, default=0x06): cv.int_range(min=0, max=15),
+            cv.Optional(CONF_GAIN, default=10): cv.int_range(min=0, max=15),
+            cv.Optional(CONF_INT_TIME, default=6): cv.int_range(min=0, max=15),
 
             cv.Optional(CONF_UVA): sensor.sensor_schema(
                 unit_of_measurement="counts",
@@ -35,6 +40,22 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_UVC): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
+                icon="mdi:weather-sunny",
+            ),
+
+            cv.Optional(CONF_UVA_WM2): sensor.sensor_schema(
+                unit_of_measurement="W/m²",
+                accuracy_decimals=4,
+                icon="mdi:weather-sunny",
+            ),
+            cv.Optional(CONF_UVB_WM2): sensor.sensor_schema(
+                unit_of_measurement="W/m²",
+                accuracy_decimals=4,
+                icon="mdi:weather-sunny",
+            ),
+            cv.Optional(CONF_UVC_WM2): sensor.sensor_schema(
+                unit_of_measurement="W/m²",
+                accuracy_decimals=4,
                 icon="mdi:weather-sunny",
             ),
         }
@@ -62,3 +83,15 @@ async def to_code(config):
     if CONF_UVC in config:
         s = await sensor.new_sensor(config[CONF_UVC])
         cg.add(var.set_uvc_sensor(s))
+
+    if CONF_UVA_WM2 in config:
+        s = await sensor.new_sensor(config[CONF_UVA_WM2])
+        cg.add(var.set_uva_wm2_sensor(s))
+
+    if CONF_UVB_WM2 in config:
+        s = await sensor.new_sensor(config[CONF_UVB_WM2])
+        cg.add(var.set_uvb_wm2_sensor(s))
+
+    if CONF_UVC_WM2 in config:
+        s = await sensor.new_sensor(config[CONF_UVC_WM2])
+        cg.add(var.set_uvc_wm2_sensor(s))
