@@ -7,10 +7,15 @@
 namespace esphome {
 namespace as7331 {
 
+enum As7331Profile {
+  PROFILE_INDOOR,
+  PROFILE_OUTDOOR,
+  PROFILE_UV_LAMP
+};
+
 class AS7331Component : public PollingComponent, public i2c::I2CDevice {
  public:
-  void set_gain(uint8_t g) { gain_ = g; }
-  void set_int_time(uint8_t t) { int_time_ = t; }
+  void set_profile(As7331Profile p) { profile_ = p; }
 
   void set_uva_raw_sensor(sensor::Sensor *s) { uva_raw_ = s; }
   void set_uvb_raw_sensor(sensor::Sensor *s) { uvb_raw_ = s; }
@@ -26,8 +31,13 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   void update() override;
 
  protected:
+  void apply_profile_();
+  void auto_adjust_();
+
   uint8_t gain_{3};
   uint8_t int_time_{4};
+
+  As7331Profile profile_{PROFILE_OUTDOOR};
 
   sensor::Sensor *uva_raw_{nullptr};
   sensor::Sensor *uvb_raw_{nullptr};
