@@ -19,23 +19,35 @@ static const uint8_t OSR_SS     = 0x80;
 static const uint8_t DOS_CONFIG = 0x02;
 static const uint8_t DOS_MEAS   = 0x03;
 
-/* ================= Basis-LSB (nW/cm² per count)
- * gain=0, int_time=0, CCLK=1.024 MHz
- * ================= */
+/* =========================================================
+ * Basis-LSB (nW/cm² per count)
+ * gain = 0, int_time = 0, CCLK = 1.024 MHz
+ * Quelle: AMS AS7331 Datasheet / SparkFun
+ * ========================================================= */
 static constexpr float LSB_BASE_UVA = 0.046f;
 static constexpr float LSB_BASE_UVB = 0.052f;
 static constexpr float LSB_BASE_UVC = 0.060f;
 
-/* ================= Skalierung ================= */
+/* =========================================================
+ * SparkFun Responsivity Factors
+ * (entscheidend für realistische W/m²!)
+ * ========================================================= */
+static constexpr float RESP_UVA = 0.93f;
+static constexpr float RESP_UVB = 1.00f;
+static constexpr float RESP_UVC = 1.27f;
+
+/* =========================================================
+ * Skalierungsfunktionen
+ * ========================================================= */
 static inline float gain_factor(uint8_t gain) {
-  return static_cast<float>(1 << gain);
+  return static_cast<float>(1 << gain);     // 2^gain
 }
 
 static inline float int_time_factor(uint8_t int_time) {
-  return 1.0f / static_cast<float>(1 << int_time);
+  return 1.0f / static_cast<float>(1 << int_time); // 1 / 2^int_time
 }
 
-/* ================= Phase 3: Profile ================= */
+/* ================= Profile ================= */
 void AS7331Component::apply_profile_() {
   switch (profile_) {
     case PROFILE_INDOOR:
@@ -58,7 +70,7 @@ void AS7331Component::apply_profile_() {
   ESP_LOGI(TAG, "Profile applied → gain=%u int_time=%u", gain_, int_time_);
 }
 
-/* ================= Phase 2: Auto-Gain / Auto-Time ================= */
+/* ================= Auto-Gain / Auto-Time ================= */
 void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
   const uint16_t RAW_MAX = 50000;
   const uint16_t RAW_MIN = 1500;
@@ -105,10 +117,10 @@ void AS7331Component::setup() {
   delay(2);
   write_byte(REG_OSR, OSR_SS | DOS_MEAS);
 
-  ESP_LOGI(TAG, "AS7331 started (CONT mode, Auto-Gain ON)");
+  ESP_LOGI(TAG, "AS7331 started (SparkFun compatible, CONT mode)");
 }
 
-/* ================= Phase 1–3: Update ================= */
+/* ================= Update ================= */
 void AS7331Component::update() {
   uint8_t buf[6];
   if (!read_bytes(REG_MRES1, buf, 6)) return;
@@ -123,29 +135,29 @@ void AS7331Component::update() {
     return;
   }
 
-  /* ===== Phase 1: RAW ===== */
+  /* ===== RAW ===== */
   if (uva_raw_) uva_raw_->publish_state(uva);
   if (uvb_raw_) uvb_raw_->publish_state(uvb);
   if (uvc_raw_) uvc_raw_->publish_state(uvc);
 
-  /* ===== Phase 2 ===== */
+  /* ===== Auto-Gain ===== */
   auto_adjust_(uva, uvb, uvc);
 
-  /* ===== Skalierung ===== */
+  /* ===== SparkFun-konforme Skalierung ===== */
   float scale =
       gain_factor(gain_) *
       int_time_factor(int_time_) *
       1e-5f;  // nW/cm² → W/m²
 
-  float uva_wm2 = uva * LSB_BASE_UVA * scale;
-  float uvb_wm2 = uvb * LSB_BASE_UVB * scale;
-  float uvc_wm2 = uvc * LSB_BASE_UVC * scale;
+  float uva_wm2 = uva * LSB_BASE_UVA * scale * RESP_UVA;
+  float uvb_wm2 = uvb * LSB_BASE_UVB * scale * RESP_UVB;
+  float uvc_wm2 = uvc * LSB_BASE_UVC * scale * RESP_UVC;
 
   if (uva_wm2_) uva_wm2_->publish_state(uva_wm2);
   if (uvb_wm2_) uvb_wm2_->publish_state(uvb_wm2);
   if (uvc_wm2_) uvc_wm2_->publish_state(uvc_wm2);
 
-  /* ===== Phase 3: UV-Index ===== */
+  /* ===== UV Index (WHO / SparkFun-ähnlich) ===== */
   float uv_index =
       (uva_wm2 * 0.0025f) +
       (uvb_wm2 * 0.0100f);
@@ -153,7 +165,7 @@ void AS7331Component::update() {
   if (uv_index_) uv_index_->publish_state(uv_index);
 
   ESP_LOGD(TAG,
-           "RAW U:%u B:%u C:%u | W/m² U:%.4f B:%.4f C:%.4f | UVI %.2f",
+           "RAW U:%u B:%u C:%u | W/m² U:%.6f B:%.6f C:%.6f | UVI %.2f",
            uva, uvb, uvc,
            uva_wm2, uvb_wm2, uvc_wm2,
            uv_index);
