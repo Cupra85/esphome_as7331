@@ -8,13 +8,15 @@ DEPENDENCIES = ["i2c"]
 CONF_GAIN = "gain"
 CONF_INT_TIME = "int_time"
 
-CONF_UVA = "uva"
-CONF_UVB = "uvb"
-CONF_UVC = "uvc"
+CONF_UVA_RAW = "uva"
+CONF_UVB_RAW = "uvb"
+CONF_UVC_RAW = "uvc"
 
-CONF_UVA_WM2 = "uva_wm2"
-CONF_UVB_WM2 = "uvb_wm2"
-CONF_UVC_WM2 = "uvc_wm2"
+CONF_UVA_WM2 = "uva_irradiance"
+CONF_UVB_WM2 = "uvb_irradiance"
+CONF_UVC_WM2 = "uvc_irradiance"
+
+CONF_UV_INDEX = "uv_index"
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
 AS7331Component = as7331_ns.class_(
@@ -26,18 +28,18 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(CONF_ID): cv.declare_id(AS7331Component),
 
-            cv.Optional(CONF_GAIN, default=10): cv.int_range(min=0, max=11),
-            cv.Optional(CONF_INT_TIME, default=6): cv.int_range(min=0, max=7),
+            cv.Optional(CONF_GAIN, default=3): cv.int_range(min=0, max=11),
+            cv.Optional(CONF_INT_TIME, default=4): cv.int_range(min=0, max=7),
 
-            cv.Optional(CONF_UVA): sensor.sensor_schema(
+            cv.Optional(CONF_UVA_RAW): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
             ),
-            cv.Optional(CONF_UVB): sensor.sensor_schema(
+            cv.Optional(CONF_UVB_RAW): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
             ),
-            cv.Optional(CONF_UVC): sensor.sensor_schema(
+            cv.Optional(CONF_UVC_RAW): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
             ),
@@ -54,6 +56,11 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="W/m²",
                 accuracy_decimals=6,
             ),
+
+            cv.Optional(CONF_UV_INDEX): sensor.sensor_schema(
+                unit_of_measurement="UV Index",
+                accuracy_decimals=2,
+            ),
         }
     )
     .extend(cv.polling_component_schema("5s"))
@@ -68,12 +75,12 @@ async def to_code(config):
     cg.add(var.set_gain(config[CONF_GAIN]))
     cg.add(var.set_int_time(config[CONF_INT_TIME]))
 
-    if CONF_UVA in config:
-        cg.add(var.set_uva_sensor(await sensor.new_sensor(config[CONF_UVA])))
-    if CONF_UVB in config:
-        cg.add(var.set_uvb_sensor(await sensor.new_sensor(config[CONF_UVB])))
-    if CONF_UVC in config:
-        cg.add(var.set_uvc_sensor(await sensor.new_sensor(config[CONF_UVC])))
+    if CONF_UVA_RAW in config:
+        cg.add(var.set_uva_raw_sensor(await sensor.new_sensor(config[CONF_UVA_RAW])))
+    if CONF_UVB_RAW in config:
+        cg.add(var.set_uvb_raw_sensor(await sensor.new_sensor(config[CONF_UVB_RAW])))
+    if CONF_UVC_RAW in config:
+        cg.add(var.set_uvc_raw_sensor(await sensor.new_sensor(config[CONF_UVC_RAW])))
 
     if CONF_UVA_WM2 in config:
         cg.add(var.set_uva_wm2_sensor(await sensor.new_sensor(config[CONF_UVA_WM2])))
@@ -81,3 +88,6 @@ async def to_code(config):
         cg.add(var.set_uvb_wm2_sensor(await sensor.new_sensor(config[CONF_UVB_WM2])))
     if CONF_UVC_WM2 in config:
         cg.add(var.set_uvc_wm2_sensor(await sensor.new_sensor(config[CONF_UVC_WM2])))
+
+    if CONF_UV_INDEX in config:
+        cg.add(var.set_uv_index_sensor(await sensor.new_sensor(config[CONF_UV_INDEX])))
