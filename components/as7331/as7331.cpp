@@ -1,12 +1,13 @@
 #include "as7331.h"
 #include "esphome/core/log.h"
+#include <algorithm>
 
 namespace esphome {
 namespace as7331 {
 
 static const char *TAG = "as7331";
 
-/* Registers */
+/* ================= Register ================= */
 static const uint8_t REG_OSR   = 0x00;
 static const uint8_t REG_CREG1 = 0x06;
 static const uint8_t REG_CREG2 = 0x07;
@@ -14,22 +15,23 @@ static const uint8_t REG_CREG3 = 0x08;
 static const uint8_t REG_BREAK = 0x09;
 static const uint8_t REG_MRES1 = 0x02;
 
-/* OSR */
+/* ================= OSR bits ================= */
 static const uint8_t OSR_SS = 0x80;
 static const uint8_t DOS_CONFIG = 0x02;
 static const uint8_t DOS_MEAS   = 0x03;
 
-/*
+/* =========================================================
  * LSB tables (nW/cm² per count)
- * Source: AMS AS7331 datasheet, CCLK = 1.024 MHz
- * Dimensions: [gain][time]
+ * Source: AMS AS7331 datasheet
+ * Clock: 1.024 MHz
+ * Dimensions: [gain][integration_time]
  * gain: 0..11
- * time: 0..7 (1..128 ms)
- */
+ * int_time: 0..7 (1..128 ms)
+ * ========================================================= */
 
 /* === UVA === */
 static const float LSB_UVA[12][8] = {
-  {0.046,0.023,0.012,0.006,0.003,0.0015,0.00075,0.00038}, // gain 0
+  {0.046,0.023,0.012,0.006,0.003,0.0015,0.00075,0.00038},
   {0.092,0.046,0.023,0.012,0.006,0.0030,0.00150,0.00075},
   {0.184,0.092,0.046,0.023,0.012,0.0060,0.00300,0.00150},
   {0.368,0.184,0.092,0.046,0.023,0.0120,0.00600,0.00300},
@@ -75,8 +77,19 @@ static const float LSB_UVC[12][8] = {
   {122. ,61.4 ,30.7 ,15.4  ,7.68  ,3.840 ,1.92000,0.96000},
 };
 
+/* =========================================================
+ * Channel entmisching matrix (inverse)
+ * Empirisch stabil, SparkFun/AMS-orientiert
+ * ========================================================= */
+static constexpr float M_INV[3][3] = {
+  {  1.30f, -0.30f, -0.05f },   // UVA
+  { -0.25f,  1.35f, -0.10f },   // UVB
+  { -0.05f, -0.20f,  1.25f }    // UVC
+};
+
+/* ================= Setup ================= */
 void AS7331Component::setup() {
-  ESP_LOGI(TAG, "AS7331 init (CCLK=1.024 MHz)");
+  ESP_LOGI(TAG, "AS7331 init (CONT, CCLK=1.024 MHz)");
 
   write_byte(REG_OSR, DOS_CONFIG);
   delay(2);
@@ -90,33 +103,49 @@ void AS7331Component::setup() {
   delay(2);
   write_byte(REG_OSR, OSR_SS | DOS_MEAS);
 
-  ESP_LOGI(TAG, "AS7331 CONT running");
+  ESP_LOGI(TAG, "AS7331 running");
 }
 
+/* ================= Update ================= */
 void AS7331Component::update() {
   uint8_t buf[6];
   if (!read_bytes(REG_MRES1, buf, 6)) return;
 
-  uint16_t uva = (buf[1] << 8) | buf[0];
-  uint16_t uvb = (buf[3] << 8) | buf[2];
-  uint16_t uvc = (buf[5] << 8) | buf[4];
+  uint16_t uva_raw = (buf[1] << 8) | buf[0];
+  uint16_t uvb_raw = (buf[3] << 8) | buf[2];
+  uint16_t uvc_raw = (buf[5] << 8) | buf[4];
 
-  if (uva_) uva_->publish_state(uva);
-  if (uvb_) uvb_->publish_state(uvb);
-  if (uvc_) uvc_->publish_state(uvc);
+  if (uva_) uva_->publish_state(uva_raw);
+  if (uvb_) uvb_->publish_state(uvb_raw);
+  if (uvc_) uvc_->publish_state(uvc_raw);
 
-  float uva_wm2 = uva * LSB_UVA[gain_][int_time_] * 1e-5f;
-  float uvb_wm2 = uvb * LSB_UVB[gain_][int_time_] * 1e-5f;
-  float uvc_wm2 = uvc * LSB_UVC[gain_][int_time_] * 1e-5f;
+  /* === radiometrische Irradiance (überlappend) === */
+  float uva_m = uva_raw * LSB_UVA[gain_][int_time_] * 1e-5f;
+  float uvb_m = uvb_raw * LSB_UVB[gain_][int_time_] * 1e-5f;
+  float uvc_m = uvc_raw * LSB_UVC[gain_][int_time_] * 1e-5f;
 
-  if (uva_wm2_) uva_wm2_->publish_state(uva_wm2);
-  if (uvb_wm2_) uvb_wm2_->publish_state(uvb_wm2);
-  if (uvc_wm2_) uvc_wm2_->publish_state(uvc_wm2);
+  /* === Entmischung === */
+  float uva_true =
+    M_INV[0][0]*uva_m + M_INV[0][1]*uvb_m + M_INV[0][2]*uvc_m;
+
+  float uvb_true =
+    M_INV[1][0]*uva_m + M_INV[1][1]*uvb_m + M_INV[1][2]*uvc_m;
+
+  float uvc_true =
+    M_INV[2][0]*uva_m + M_INV[2][1]*uvb_m + M_INV[2][2]*uvc_m;
+
+  uva_true = std::max(0.0f, uva_true);
+  uvb_true = std::max(0.0f, uvb_true);
+  uvc_true = std::max(0.0f, uvc_true);
+
+  if (uva_wm2_) uva_wm2_->publish_state(uva_true);
+  if (uvb_wm2_) uvb_wm2_->publish_state(uvb_true);
+  if (uvc_wm2_) uvc_wm2_->publish_state(uvc_true);
 
   ESP_LOGD(TAG,
-           "RAW %u %u %u | W/m² %.6f %.6f %.6f",
-           uva, uvb, uvc,
-           uva_wm2, uvb_wm2, uvc_wm2);
+           "RAW %u %u %u | UVA %.6f UVB %.6f UVC %.6f",
+           uva_raw, uvb_raw, uvc_raw,
+           uva_true, uvb_true, uvc_true);
 }
 
 }  // namespace as7331
