@@ -38,8 +38,6 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
-            # Simple numeric codes, as requested:
-            # gain: 0..11, int_time: 0..7
             cv.Optional(CONF_GAIN, default=6): cv.int_range(min=0, max=11),
             cv.Optional(CONF_INT_TIME, default=4): cv.int_range(min=0, max=7),
 
@@ -48,7 +46,6 @@ CONFIG_SCHEMA = (
 
             cv.Optional(CONF_PROFILE, default="custom"): cv.enum(PROFILE_MAP, lower=True),
 
-            # Raw counts
             cv.Optional(CONF_UVA_RAW): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
@@ -62,22 +59,21 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=0,
             ),
 
-            # Irradiance in W/m²
             cv.Optional(CONF_UVA_WM2): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=4,
+                accuracy_decimals=6,
             ),
             cv.Optional(CONF_UVB_WM2): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=4,
+                accuracy_decimals=6,
             ),
             cv.Optional(CONF_UVC_WM2): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=4,
+                accuracy_decimals=6,
             ),
 
-            # UV Index
             cv.Optional(CONF_UV_INDEX): sensor.sensor_schema(
+                unit_of_measurement="UV Index",
                 accuracy_decimals=2,
             ),
         }
