@@ -12,6 +12,8 @@ static constexpr uint8_t REG_CREG1 = 0x06;
 static constexpr uint8_t REG_CREG2 = 0x07;
 static constexpr uint8_t REG_CREG3 = 0x08;
 static constexpr uint8_t REG_BREAK = 0x09;
+
+/* IMPORTANT: TEMP register block */
 static constexpr uint8_t REG_TEMP  = 0x0A;
 
 /* OSR */
@@ -22,16 +24,20 @@ static constexpr uint8_t OSR_START  = 0x83;
 /* Status */
 static constexpr uint8_t STATUS_NDATA = 0x08;
 
-/* LSB tables */
-static const float LSB_UVA[12][8] = { /* … exakt wie bei dir … */ };
-static const float LSB_UVB[12][8] = { /* … exakt wie bei dir … */ };
-static const float LSB_UVC[12][8] = { /* … exakt wie bei dir … */ };
+/* === FIXED measurement parameters (wie im funktionierenden Code) === */
+static constexpr uint8_t GAIN     = 0;  // 0..11
+static constexpr uint8_t INT_TIME = 7;  // 0..7
+
+/* LSB tables – unverändert */
+static const float LSB_UVA[12][8] = { /* deine Tabelle */ };
+static const float LSB_UVB[12][8] = { /* deine Tabelle */ };
+static const float LSB_UVC[12][8] = { /* deine Tabelle */ };
 
 void AS7331Component::setup() {
   write_byte(REG_OSR, OSR_CONFIG);
   delay(3);
 
-  write_byte(REG_CREG1, (gain_ << 4) | int_time_);
+  write_byte(REG_CREG1, (GAIN << 4) | INT_TIME);
   write_byte(REG_CREG2, 0x40);
   write_byte(REG_CREG3, 0x00);
   write_byte(REG_BREAK, 0x19);
@@ -40,7 +46,7 @@ void AS7331Component::setup() {
   delay(3);
   write_byte(REG_OSR, OSR_START);
 
-  ESP_LOGI(TAG, "AS7331 started (sync TEMP read, CONT)");
+  ESP_LOGI(TAG, "AS7331 started (TEMP-sync, CONT mode)");
 }
 
 void AS7331Component::update() {
@@ -48,6 +54,7 @@ void AS7331Component::update() {
   if (!read_bytes(REG_OSR, osr, 2)) return;
   if (!(osr[1] & STATUS_NDATA)) return;
 
+  /* === CRITICAL FIX === */
   uint8_t raw[8];
   if (!read_bytes(REG_TEMP, raw, 8)) return;
 
@@ -59,9 +66,9 @@ void AS7331Component::update() {
   if (uvb_raw_) uvb_raw_->publish_state(uvb);
   if (uvc_raw_) uvc_raw_->publish_state(uvc);
 
-  float uva_wm2 = uva * LSB_UVA[gain_][int_time_] * 0.01f;
-  float uvb_wm2 = uvb * LSB_UVB[gain_][int_time_] * 0.01f;
-  float uvc_wm2 = uvc * LSB_UVC[gain_][int_time_] * 0.01f;
+  float uva_wm2 = uva * LSB_UVA[GAIN][INT_TIME] * 0.01f;
+  float uvb_wm2 = uvb * LSB_UVB[GAIN][INT_TIME] * 0.01f;
+  float uvc_wm2 = uvc * LSB_UVC[GAIN][INT_TIME] * 0.01f;
 
   if (uva_wm2_) uva_wm2_->publish_state(uva_wm2);
   if (uvb_wm2_) uvb_wm2_->publish_state(uvb_wm2);
