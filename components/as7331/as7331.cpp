@@ -113,7 +113,7 @@ void AS7331Component::update() {
   if (uv_index_) {
     uv_index_->publish_state(uv_index);
   }
- 
+}
 void AS7331Component::dump_config() {
   ESP_LOGCONFIG(TAG, "AS7331 UV Sensor");
   LOG_I2C_DEVICE(this);
