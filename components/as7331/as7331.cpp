@@ -102,10 +102,18 @@ void AS7331Component::update() {
   if (uvb_) uvb_->publish_state(uvb_w);
   if (uvc_) uvc_->publish_state(uvc_w);
 
-  float uvi = (uva_w * 0.0025f) + (uvb_w * 0.010f);
-  if (uv_index_) uv_index_->publish_state(uvi);
-}
+  // ===== UV Index nach SparkFun / WHO =====
+  // UVC wird NICHT berücksichtigt
+  float erythem_wm2 =
+    (uvb_w) +            // UVB dominiert biologisch
+    (uva_w * 0.002f);    // UVA nur minimaler Beitrag
 
+  float uv_index = erythem_wm2 / 0.025f;
+
+  if (uv_index_) {
+    uv_index_->publish_state(uv_index);
+  }
+ 
 void AS7331Component::dump_config() {
   ESP_LOGCONFIG(TAG, "AS7331 UV Sensor");
   LOG_I2C_DEVICE(this);
