@@ -50,3 +50,14 @@ praxisgerechten Approximation der CIE-Erythem-Wirkungsfunktion.
 ```text
 E_ery = UVB + (UVA × 0.002)
 UV-Index = E_ery / 0.025
+
+**### 🔌 Hardware-Anschluss**
+
+| AS7331 | ESP32 |
+|------|------|
+| VCC | 3.3V |
+| GND | GND |
+| SDA | GPIO21 (Standard) |
+| SCL | GPIO22 (Standard) |
+
+Andere Pins sind in der YAML frei wählbar.
