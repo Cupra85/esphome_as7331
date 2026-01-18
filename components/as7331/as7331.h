@@ -1,12 +1,3 @@
-#pragma once
-
-#include "esphome/core/component.h"
-#include "esphome/components/i2c/i2c.h"
-#include "esphome/components/sensor/sensor.h"
-
-namespace esphome {
-namespace as7331 {
-
 class AS7331Component : public esphome::PollingComponent,
                         public esphome::i2c::I2CDevice {
  public:
@@ -14,6 +5,17 @@ class AS7331Component : public esphome::PollingComponent,
   void update() override;
   void dump_config() override;
 
+  void set_uva_raw(sensor::Sensor *s) { uva_raw = s; }
+  void set_uvb_raw(sensor::Sensor *s) { uvb_raw = s; }
+  void set_uvc_raw(sensor::Sensor *s) { uvc_raw = s; }
+
+  void set_uva_irr(sensor::Sensor *s) { uva_irr = s; }
+  void set_uvb_irr(sensor::Sensor *s) { uvb_irr = s; }
+  void set_uvc_irr(sensor::Sensor *s) { uvc_irr = s; }
+
+  void set_uv_index(sensor::Sensor *s) { uv_index = s; }
+
+ protected:
   sensor::Sensor *uva_raw{nullptr};
   sensor::Sensor *uvb_raw{nullptr};
   sensor::Sensor *uvc_raw{nullptr};
@@ -23,10 +25,4 @@ class AS7331Component : public esphome::PollingComponent,
   sensor::Sensor *uvc_irr{nullptr};
 
   sensor::Sensor *uv_index{nullptr};
-
-  uint8_t gain = 3;
-  uint8_t int_time = 4;
 };
-
-}  // namespace as7331
-}  // namespace esphome
