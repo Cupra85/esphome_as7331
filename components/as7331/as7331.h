@@ -7,8 +7,10 @@
 namespace esphome {
 namespace as7331 {
 
-class AS7331Component : public PollingComponent, public i2c::I2CDevice {
+class AS7331Component : public PollingComponent,
+                        public i2c::I2CDevice {
  public:
+  // Poll-Intervall wird aus YAML übernommen
   void setup() override;
   void update() override;
   void dump_config() override;
@@ -20,10 +22,11 @@ class AS7331Component : public PollingComponent, public i2c::I2CDevice {
   sensor::Sensor *uva_irr{nullptr};
   sensor::Sensor *uvb_irr{nullptr};
   sensor::Sensor *uvc_irr{nullptr};
+
   sensor::Sensor *uv_index{nullptr};
 
-  uint8_t gain = 3;      // default 256x
-  uint8_t int_time = 4; // 16 ms
+  uint8_t gain = 3;
+  uint8_t int_time = 4;
 };
 
 }  // namespace as7331
