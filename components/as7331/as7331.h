@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "esphome/core/polling_component.h"
 #include "esphome/components/i2c/i2c.h"
 #include "esphome/components/sensor/sensor.h"
 
@@ -10,7 +11,7 @@ namespace as7331 {
 class AS7331Component : public esphome::PollingComponent,
                         public esphome::i2c::I2CDevice {
  public:
-  // PollingComponent constructor (z. B. 10 s Update-Intervall)
+  // 10 Sekunden Update-Intervall
   AS7331Component() : PollingComponent(10000) {}
 
   void setup() override;
