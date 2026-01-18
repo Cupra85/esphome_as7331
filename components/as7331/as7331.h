@@ -7,10 +7,9 @@
 namespace esphome {
 namespace as7331 {
 
-class AS7331Component : public PollingComponent,
-                        public i2c::I2CDevice {
+class AS7331Component : public esphome::PollingComponent,
+                        public esphome::i2c::I2CDevice {
  public:
-  // Poll-Intervall wird aus YAML übernommen
   void setup() override;
   void update() override;
   void dump_config() override;
