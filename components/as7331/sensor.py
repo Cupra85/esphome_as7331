@@ -57,28 +57,28 @@ async def to_code(config):
 
     if "uva_raw" in config:
         sens = await sensor.new_sensor(config["uva_raw"])
-        cg.add(var.uva_raw.set(sens))
+        cg.add(var.set_uva_raw(sens))
 
     if "uvb_raw" in config:
         sens = await sensor.new_sensor(config["uvb_raw"])
-        cg.add(var.uvb_raw.set(sens))
+        cg.add(var.set_uvb_raw(sens))
 
     if "uvc_raw" in config:
         sens = await sensor.new_sensor(config["uvc_raw"])
-        cg.add(var.uvc_raw.set(sens))
+        cg.add(var.set_uvc_raw(sens))
 
     if "uva" in config:
         sens = await sensor.new_sensor(config["uva"])
-        cg.add(var.uva_irr.set(sens))
+        cg.add(var.set_uva(sens))
 
     if "uvb" in config:
         sens = await sensor.new_sensor(config["uvb"])
-        cg.add(var.uvb_irr.set(sens))
+        cg.add(var.set_uvb(sens))
 
     if "uvc" in config:
         sens = await sensor.new_sensor(config["uvc"])
-        cg.add(var.uvc_irr.set(sens))
+        cg.add(var.set_uvc(sens))
 
     if "uv_index" in config:
         sens = await sensor.new_sensor(config["uv_index"])
-        cg.add(var.uv_index.set(sens))
+        cg.add(var.set_uv_index(sens))
