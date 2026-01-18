@@ -13,21 +13,17 @@ class AS7331Component : public esphome::Component,
   void setup() override;
   void update() override;
 
-  // Raw sensors
   void set_uva_raw_sensor(sensor::Sensor *s) { uva_raw_ = s; }
   void set_uvb_raw_sensor(sensor::Sensor *s) { uvb_raw_ = s; }
   void set_uvc_raw_sensor(sensor::Sensor *s) { uvc_raw_ = s; }
 
-  // Irradiance sensors
   void set_uva_sensor(sensor::Sensor *s) { uva_wm2_ = s; }
   void set_uvb_sensor(sensor::Sensor *s) { uvb_wm2_ = s; }
   void set_uvc_sensor(sensor::Sensor *s) { uvc_wm2_ = s; }
 
-  // UV index
   void set_uv_index_sensor(sensor::Sensor *s) { uv_index_ = s; }
 
  protected:
-  // Sensor pointers
   sensor::Sensor *uva_raw_{nullptr};
   sensor::Sensor *uvb_raw_{nullptr};
   sensor::Sensor *uvc_raw_{nullptr};
