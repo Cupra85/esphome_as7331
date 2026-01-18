@@ -1,6 +1,6 @@
 # ESPHome AS7331 Spectral UV Sensor
 
-Dieses Projekt integriert den **ams OSRAM AS7331** Spektral-UV-Sensor als **Custom ESPHome Component**.  
+Dieses Projekt integriert den **AS7331** Spektral-UV-Sensor als **Custom ESPHome Component**.  
 Der Sensor misst **UVA, UVB und UVC** kontinuierlich über I²C und berechnet daraus zusätzlich  
 einen **biologisch normgerechten UV-Index** gemäß WHO / ISO 17166.
 
