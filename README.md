@@ -2,7 +2,7 @@
 
 Dieses Projekt integriert den **ams OSRAM AS7331** Spektral-UV-Sensor als **Custom ESPHome Component**.
 Der Sensor misst **UVA, UVB und UVC** kontinuierlich über I²C und berechnet daraus zusätzlich
-einen **biologisch normgerechten UV-Index** (WHO / ISO 17166).
+einen **biologisch normgerechten UV-Index** gemäß WHO / ISO 17166.
 
 Das Projekt basiert auf:
 - ams OSRAM AS7331 Datasheet
@@ -19,22 +19,34 @@ Das Projekt basiert auf:
 - ✔ UV-Index nach WHO / CIE-Erythem-Modell
 - ✔ Automatische Gain- & Integration-Time-Regelung
 - ✔ I²C-Adresse & Bus frei konfigurierbar
-- ✔ Keine externen Libraries notwendig
 - ✔ ESPHome- & Home-Assistant-kompatibel
 
 ---
 
-## 🧪 Messprinzip
+## 🧪 Messprinzip & UV-Index-Berechnung
 
-Der AS7331 besitzt drei breitbandige Kanäle:
+Der AS7331 besitzt drei breitbandige UV-Kanäle:
 
-| Kanal | Spektralbereich | Verwendung |
-|-----|----------------|------------|
-| UVA | ca. 320–400 nm | UV-Leistung |
-| UVB | ca. 280–320 nm | UV-Index (dominant) |
-| UVC | ca. 230–280 nm | technische Messung |
+| Kanal | Spektralbereich | Bedeutung |
+|-----|----------------|-----------|
+| **UVA** | ca. 320–400 nm | Geringe erythemische Wirkung |
+| **UVB** | ca. 280–320 nm | **Dominant für Hautrötung** |
+| **UVC** | ca. 230–280 nm | Technisch, nicht UV-Index-relevant |
 
-### UV-Index-Berechnung
+### Biologische Gewichtung (Erythem)
 
-Der UV-Index wird **biologisch gewichtet** berechnet:
+Da die menschliche Haut auf verschiedene UV-Wellenlängen unterschiedlich reagiert, wird für den
+UV-Index eine **erythemische Gewichtung** verwendet:
 
+- **UVB dominiert die Hautrötung**
+- **UVA trägt nur minimal bei**
+- **UVC wird nicht berücksichtigt (ISO-konform)**
+
+Dieses Verfahren entspricht der **SparkFun-Referenzimplementierung** und einer
+praxisgerechten Approximation der CIE-Erythem-Wirkungsfunktion.
+
+### Berechnungsformel
+
+```text
+E_ery = UVB + (UVA × 0.002)
+UV-Index = E_ery / 0.025
