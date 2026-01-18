@@ -1,0 +1,86 @@
+esphome:
+  name: as7331_uv_sensor
+  friendly_name: AS7331 UV Sensor
+  platform: ESP32
+  board: esp32dev
+
+logger:
+
+api:
+
+ota:
+
+wifi:
+  ssid: "WLAN_NAME"
+  password: "WLAN_PASSWORT"
+  ap:
+    ssid: "AS7331 Fallback"
+    password: "fallback123"
+
+captive_portal:
+
+# -----------------------
+# I²C Bus
+# -----------------------
+i2c:
+  id: bus_a
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  frequency: 400kHz
+
+# -----------------------
+# External Component
+# -----------------------
+external_components:
+  - source:
+      type: git
+      url: https://github.com/Cupra85/esphome_as7331
+      ref: main
+    components: [as7331]
+
+# -----------------------
+# AS7331 Sensor
+# -----------------------
+sensor:
+  - platform: as7331
+    i2c_id: bus_a
+    address: 0x74   ### Adresse ggf. anpassen
+    update_interval: 10s
+
+    # Rohwerte (Counts)
+    uva_raw:
+      name: "UVA Raw"
+      unit_of_measurement: "counts"
+      accuracy_decimals: 0
+
+    uvb_raw:
+      name: "UVB Raw"
+      unit_of_measurement: "counts"
+      accuracy_decimals: 0
+
+    uvc_raw:
+      name: "UVC Raw"
+      unit_of_measurement: "counts"
+      accuracy_decimals: 0
+
+    # Bestrahlungsstärke
+    uva:
+      name: "UVA Irradiance"
+      unit_of_measurement: "W/m²"
+      accuracy_decimals: 3
+
+    uvb:
+      name: "UVB Irradiance"
+      unit_of_measurement: "W/m²"
+      accuracy_decimals: 3
+
+    uvc:
+      name: "UVC Irradiance"
+      unit_of_measurement: "W/m²"
+      accuracy_decimals: 3
+
+    # UV Index (WHO / ISO 17166)
+    uv_index:
+      name: "UV Index"
+      accuracy_decimals: 2
