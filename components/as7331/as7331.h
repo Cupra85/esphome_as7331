@@ -1,45 +1,29 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/core/polling_component.h"
 #include "esphome/components/i2c/i2c.h"
 #include "esphome/components/sensor/sensor.h"
 
 namespace esphome {
 namespace as7331 {
 
-class AS7331Component : public esphome::PollingComponent,
-                        public esphome::i2c::I2CDevice {
+class AS7331Component : public PollingComponent, public i2c::I2CDevice {
  public:
-  // 10 Sekunden Update-Intervall
-  AS7331Component() : PollingComponent(10000) {}
-
   void setup() override;
   void update() override;
+  void dump_config() override;
 
-  // Raw sensors
-  void set_uva_raw_sensor(sensor::Sensor *s) { uva_raw_ = s; }
-  void set_uvb_raw_sensor(sensor::Sensor *s) { uvb_raw_ = s; }
-  void set_uvc_raw_sensor(sensor::Sensor *s) { uvc_raw_ = s; }
+  sensor::Sensor *uva_raw{nullptr};
+  sensor::Sensor *uvb_raw{nullptr};
+  sensor::Sensor *uvc_raw{nullptr};
 
-  // Irradiance sensors
-  void set_uva_sensor(sensor::Sensor *s) { uva_wm2_ = s; }
-  void set_uvb_sensor(sensor::Sensor *s) { uvb_wm2_ = s; }
-  void set_uvc_sensor(sensor::Sensor *s) { uvc_wm2_ = s; }
+  sensor::Sensor *uva_irr{nullptr};
+  sensor::Sensor *uvb_irr{nullptr};
+  sensor::Sensor *uvc_irr{nullptr};
+  sensor::Sensor *uv_index{nullptr};
 
-  // UV Index
-  void set_uv_index_sensor(sensor::Sensor *s) { uv_index_ = s; }
-
- protected:
-  sensor::Sensor *uva_raw_{nullptr};
-  sensor::Sensor *uvb_raw_{nullptr};
-  sensor::Sensor *uvc_raw_{nullptr};
-
-  sensor::Sensor *uva_wm2_{nullptr};
-  sensor::Sensor *uvb_wm2_{nullptr};
-  sensor::Sensor *uvc_wm2_{nullptr};
-
-  sensor::Sensor *uv_index_{nullptr};
+  uint8_t gain = 3;      // default 256x
+  uint8_t int_time = 4; // 16 ms
 };
 
 }  // namespace as7331
