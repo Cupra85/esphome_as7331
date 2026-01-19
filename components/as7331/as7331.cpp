@@ -18,20 +18,17 @@ static constexpr uint8_t OSR_CONFIG = 0x02;
 static constexpr uint8_t OSR_MEAS   = 0x03;
 static constexpr uint8_t OSR_START  = 0x83;
 
-/* Responsivity (wie bei dir, unverändert) */
+/* Responsivity (unverändert) */
 static constexpr float RESP_UVA = 0.188f;
 static constexpr float RESP_UVB = 0.170f;
 static constexpr float RESP_UVC = 0.388f;
 
 /* Gain Tabelle */
 static constexpr float GAIN_TABLE[12] = {
-  2048,1024,512,256,128,64,32,16,8,4,2,1
-
-/* Kalibrierfaktoren */
-static constexpr float CAL_UVA = 1.00f;  // 1.25 für +25 %
-static constexpr float CAL_UVB = 1.00f;  // 1.40 für +40 %
-static constexpr float CAL_UVC = 1.25f;  // meist 1.0 lassen
+  2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1
 };
+
+/* ================================================= */
 
 void AS7331Component::write_config_() {
   write_byte(REG_CREG1, (gain_ << 4) | (int_time_ & 0x0F));
@@ -42,7 +39,6 @@ void AS7331Component::write_config_() {
 void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
   uint16_t peak = std::max(uva, std::max(uvb, uvc));
 
-  // zu hell
   if (peak > 60000) {
     if (int_time_ > 0) {
       int_time_--;
@@ -54,7 +50,6 @@ void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
     return;
   }
 
-  // zu dunkel
   if (peak < 200) {
     if (gain_ > 0) {
       gain_--;
@@ -66,6 +61,7 @@ void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
   }
 }
 
+/* ===== SETUP ===== */
 void AS7331Component::setup() {
   write_byte(REG_OSR, OSR_CONFIG);
   delay(2);
@@ -82,9 +78,11 @@ void AS7331Component::setup() {
   ESP_LOGI(TAG, "AS7331 running in CONT mode with Auto-Gain");
 }
 
+/* ===== UPDATE ===== */
 void AS7331Component::update() {
   uint8_t buf[6];
-  if (!read_bytes(REG_MRES1, buf, 6)) return;
+  if (!read_bytes(REG_MRES1, buf, 6))
+    return;
 
   uint16_t uva = (buf[1] << 8) | buf[0];
   uint16_t uvb = (buf[3] << 8) | buf[2];
@@ -99,30 +97,34 @@ void AS7331Component::update() {
   float tconv = (1 << int_time_) / 1000.0f;
   float gain_factor = GAIN_TABLE[gain_];
 
-float uva_w = ((uva / (RESP_UVA * gain_factor * tconv)) * 0.01f) * CAL_UVA;
-float uvb_w = ((uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f) * CAL_UVB;
-float uvc_w = ((uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f) * CAL_UVC;
+  // --- Kalibrierung (Default = 1.00 aus Header) ---
+  float uva_w = ((uva / (RESP_UVA * gain_factor * tconv)) * 0.01f) * uva_calibration_;
+  float uvb_w = ((uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f) * uvb_calibration_;
+  float uvc_w = ((uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f) * uvc_calibration_;
 
   if (uva_) uva_->publish_state(uva_w);
   if (uvb_) uvb_->publish_state(uvb_w);
   if (uvc_) uvc_->publish_state(uvc_w);
 
-  // ===== UV Index nach SparkFun / WHO =====
-  // UVC wird NICHT berücksichtigt
+  /* ===== UV Index (WHO / SparkFun-konform) ===== */
   float erythem_wm2 =
-    (uvb_w) +            // UVB dominiert biologisch
-    (uva_w * 0.002f);    // UVA nur minimaler Beitrag
+      uvb_w +           // UVB dominiert
+      (uva_w * 0.002f); // UVA minimal
 
   float uv_index = erythem_wm2 / 0.025f;
 
-  if (uv_index_) {
+  if (uv_index_)
     uv_index_->publish_state(uv_index);
-  }
 }
+
+/* ===== DUMP CONFIG ===== */
 void AS7331Component::dump_config() {
   ESP_LOGCONFIG(TAG, "AS7331 UV Sensor");
   LOG_I2C_DEVICE(this);
   ESP_LOGCONFIG(TAG, "  Auto Gain/Time enabled");
+  ESP_LOGCONFIG(TAG, "  UVA calibration: %.3f", uva_calibration_);
+  ESP_LOGCONFIG(TAG, "  UVB calibration: %.3f", uvb_calibration_);
+  ESP_LOGCONFIG(TAG, "  UVC calibration: %.3f", uvc_calibration_);
 }
 
 }  // namespace as7331
