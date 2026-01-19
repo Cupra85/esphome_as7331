@@ -28,8 +28,8 @@ static constexpr float GAIN_TABLE[12] = {
   2048,1024,512,256,128,64,32,16,8,4,2,1
 
 /* Kalibrierfaktoren */
-static constexpr float CAL_UVA = 5.00f;  // 1.25 für +25 %
-static constexpr float CAL_UVB = 5.00f;  // 1.40 für +40 %
+static constexpr float CAL_UVA = 1.00f;  // 1.25 für +25 %
+static constexpr float CAL_UVB = 1.00f;  // 1.40 für +40 %
 static constexpr float CAL_UVC = 1.25f;  // meist 1.0 lassen
 };
 
