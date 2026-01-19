@@ -26,6 +26,11 @@ static constexpr float RESP_UVC = 0.388f;
 /* Gain Tabelle */
 static constexpr float GAIN_TABLE[12] = {
   2048,1024,512,256,128,64,32,16,8,4,2,1
+
+/* Kalibrierfaktoren */
+static constexpr float CAL_UVA = 5.00f;  // 1.25 für +25 %
+static constexpr float CAL_UVB = 5.00f;  // 1.40 für +40 %
+static constexpr float CAL_UVC = 1.25f;  // meist 1.0 lassen
 };
 
 void AS7331Component::write_config_() {
@@ -94,9 +99,9 @@ void AS7331Component::update() {
   float tconv = (1 << int_time_) / 1000.0f;
   float gain_factor = GAIN_TABLE[gain_];
 
-  float uva_w = (uva / (RESP_UVA * gain_factor * tconv)) * 0.01f;
-  float uvb_w = (uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f;
-  float uvc_w = (uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f;
+float uva_w = ((uva / (RESP_UVA * gain_factor * tconv)) * 0.01f) * CAL_UVA;
+float uvb_w = ((uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f) * CAL_UVB;
+float uvc_w = ((uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f) * CAL_UVC;
 
   if (uva_) uva_->publish_state(uva_w);
   if (uvb_) uvb_->publish_state(uvb_w);
