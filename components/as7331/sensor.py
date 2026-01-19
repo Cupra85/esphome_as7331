@@ -30,27 +30,26 @@ CONFIG_SCHEMA = (
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=3,
+                accuracy_decimals=4,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=3,
+                accuracy_decimals=4,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=3,
+                accuracy_decimals=4,
             ),
 
             cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
             ),
-
-            cv.Optional("uva_calibration", default=1.0): cv.float_,
-            cv.Optional("uvb_calibration", default=1.0): cv.float_,
-            cv.Optional("uvc_calibration", default=1.0): cv.float_,
         }
     )
-    .extend(i2c.i2c_device_schema(0x77))
+    .extend(i2c.i2c_device_schema(0x74))
     .extend(cv.polling_component_schema("2s"))
 )
 
@@ -59,23 +58,32 @@ async def to_code(config):
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
-    cg.add(var.set_uva_calibration(config["uva_calibration"]))
-    cg.add(var.set_uvb_calibration(config["uvb_calibration"]))
-    cg.add(var.set_uvc_calibration(config["uvc_calibration"]))
-
     if "uva_raw" in config:
-        cg.add(var.set_uva_raw(await sensor.new_sensor(config["uva_raw"])))
+        sens = await sensor.new_sensor(config["uva_raw"])
+        cg.add(var.set_uva_raw(sens))
+
     if "uvb_raw" in config:
-        cg.add(var.set_uvb_raw(await sensor.new_sensor(config["uvb_raw"])))
+        sens = await sensor.new_sensor(config["uvb_raw"])
+        cg.add(var.set_uvb_raw(sens))
+
     if "uvc_raw" in config:
-        cg.add(var.set_uvc_raw(await sensor.new_sensor(config["uvc_raw"])))
+        sens = await sensor.new_sensor(config["uvc_raw"])
+        cg.add(var.set_uvc_raw(sens))
 
     if "uva" in config:
-        cg.add(var.set_uva(await sensor.new_sensor(config["uva"])))
-    if "uvb" in config:
-        cg.add(var.set_uvb(await sensor.new_sensor(config["uvb"])))
-    if "uvc" in config:
-        cg.add(var.set_uvc(await sensor.new_sensor(config["uvc"])))
+        sens = await sensor.new_sensor(config["uva"])
+        cg.add(var.set_uva(sens))
 
+    if "uvb" in config:
+        sens = await sensor.new_sensor(config["uvb"])
+        cg.add(var.set_uvb(sens))
+
+    if "uvc" in config:
+        sens = await sensor.new_sensor(config["uvc"])
+        cg.add(var.set_uvc(sens))
+
+    if "uv_index" in config:
+        sens = await sensor.new_sensor(config["uv_index"])
+        cg.add(var.set_uv_index(sens))
     if "uv_index" in config:
         cg.add(var.set_uv_index(await sensor.new_sensor(config["uv_index"])))
