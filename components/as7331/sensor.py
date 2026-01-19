@@ -14,6 +14,9 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
+            # --------------------
+            # Rohwerte
+            # --------------------
             cv.Optional("uva_raw"): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
@@ -27,6 +30,9 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=0,
             ),
 
+            # --------------------
+            # Bestrahlungsstärke
+            # --------------------
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
@@ -40,10 +46,20 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=4,
             ),
 
+            # --------------------
+            # UV Index
+            # --------------------
             cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
             ),
+
+            # --------------------
+            # Kalibrierung (NEU)
+            # --------------------
+            cv.Optional("uva_calibration", default=1.0): cv.float_,
+            cv.Optional("uvb_calibration", default=1.0): cv.float_,
+            cv.Optional("uvc_calibration", default=1.0): cv.float_,
         }
     )
     .extend(i2c.i2c_device_schema(0x74))
@@ -55,6 +71,9 @@ async def to_code(config):
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
+    # --------------------
+    # Sensoren
+    # --------------------
     if "uva_raw" in config:
         sens = await sensor.new_sensor(config["uva_raw"])
         cg.add(var.set_uva_raw(sens))
@@ -82,3 +101,10 @@ async def to_code(config):
     if "uv_index" in config:
         sens = await sensor.new_sensor(config["uv_index"])
         cg.add(var.set_uv_index(sens))
+
+    # --------------------
+    # Kalibrierung → C++
+    # --------------------
+    cg.add(var.set_uva_calibration(config["uva_calibration"]))
+    cg.add(var.set_uvb_calibration(config["uvb_calibration"]))
+    cg.add(var.set_uvc_calibration(config["uvc_calibration"]))
