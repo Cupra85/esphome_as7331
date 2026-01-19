@@ -14,7 +14,9 @@ class AS7331Component : public esphome::PollingComponent,
   void update() override;
   void dump_config() override;
 
-  // Setter
+  // --------------------
+  // Setter (bestehend)
+  // --------------------
   void set_uva_raw(sensor::Sensor *s) { uva_raw_ = s; }
   void set_uvb_raw(sensor::Sensor *s) { uvb_raw_ = s; }
   void set_uvc_raw(sensor::Sensor *s) { uvc_raw_ = s; }
@@ -25,8 +27,17 @@ class AS7331Component : public esphome::PollingComponent,
 
   void set_uv_index(sensor::Sensor *s) { uv_index_ = s; }
 
+  // --------------------
+  // Kalibrierung (NEU)
+  // --------------------
+  void set_uva_calibration(float v) { uva_calibration_ = v; }
+  void set_uvb_calibration(float v) { uvb_calibration_ = v; }
+  void set_uvc_calibration(float v) { uvc_calibration_ = v; }
+
  protected:
+  // --------------------
   // bestehend
+  // --------------------
   uint8_t gain_ = 3;
   uint8_t int_time_ = 4;
 
@@ -34,6 +45,9 @@ class AS7331Component : public esphome::PollingComponent,
   void auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc);
   void write_config_();
 
+  // --------------------
+  // Sensor Pointer
+  // --------------------
   sensor::Sensor *uva_raw_{nullptr};
   sensor::Sensor *uvb_raw_{nullptr};
   sensor::Sensor *uvc_raw_{nullptr};
@@ -43,6 +57,13 @@ class AS7331Component : public esphome::PollingComponent,
   sensor::Sensor *uvc_{nullptr};
 
   sensor::Sensor *uv_index_{nullptr};
+
+  // --------------------
+  // Kalibrierfaktoren (NEU)
+  // --------------------
+  float uva_calibration_{1.0f};
+  float uvb_calibration_{1.0f};
+  float uvc_calibration_{1.0f};
 };
 
 }  // namespace as7331
