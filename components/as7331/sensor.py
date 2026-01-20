@@ -87,3 +87,4 @@ async def to_code(config):
         cg.add(var.set_uv_index(sens))
     if "uv_index" in config:
         cg.add(var.set_uv_index(await sensor.new_sensor(config["uv_index"])))
+
