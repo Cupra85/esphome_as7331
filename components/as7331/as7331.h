@@ -21,7 +21,7 @@ class AS7331Component : public esphome::PollingComponent,
   void set_uvc_raw(sensor::Sensor *s) { uvc_raw_ = s; }
 @@ -25,21 +25,25 @@
 
-  void set_uv_index_as7331(sensor::Sensor *s) { uv_index_as7331_ = s; }
+  void set_uv_index(sensor::Sensor *s) { uv_index_ = s; }
 
   // Konfiguration (Defaultwerte)
   uint8_t gain_ = 3;      // sinnvoller Mittelwert
@@ -44,7 +44,7 @@ class AS7331Component : public esphome::PollingComponent,
   sensor::Sensor *uvb_{nullptr};
   sensor::Sensor *uvc_{nullptr};
 
-  sensor::Sensor *uv_index_as7331_{nullptr};
+  sensor::Sensor *uv_index_{nullptr};
 };
 
 }  // namespace as7331
