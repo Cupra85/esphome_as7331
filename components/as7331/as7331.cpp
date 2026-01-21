@@ -108,10 +108,10 @@ void AS7331Component::update() {
     (uvb_w) +            // UVB dominiert biologisch
     (uva_w * 0.002f);    // UVA nur minimaler Beitrag
 
-  float uv_index = erythem_wm2 / 0.025f;
+  float uv_index_as7331 = erythem_wm2 / 0.025f;
 
-  if (uv_index_) {
-    uv_index_->publish_state(uv_index);
+  if (uv_index_as7331_) {
+    uv_index_as7331_->publish_state(uv_index_as7331);
   }
  
 }
