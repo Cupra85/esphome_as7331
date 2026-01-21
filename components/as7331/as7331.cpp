@@ -39,6 +39,13 @@ void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
 
   // zu hell
   if (peak > 60000) {
+    if (int_time_ > 0) int_time_--;
+    else if (gain_ < 11) gain_++;
+    write_config_();
+  } else if (peak < 200) {
+    if (gain_ > 0) gain_--;
+    else if (int_time_ < 7) int_time_++;
+    write_config_();
     if (int_time_ > 0) {
       int_time_--;
       write_config_();
@@ -61,39 +68,31 @@ void AS7331Component::auto_adjust_(uint16_t uva, uint16_t uvb, uint16_t uvc) {
   }
 }
 
-void AS7331Component::setup() {
-  write_byte(REG_OSR, OSR_CONFIG);
-  delay(2);
-
-  write_config_();
-
-  write_byte(REG_CREG3, 0x00);
-  write_byte(REG_BREAK, 0x19);
-
-  write_byte(REG_OSR, OSR_MEAS);
+@@ -55,15 +74,12 @@
   delay(2);
   write_byte(REG_OSR, OSR_START);
 
+  ESP_LOGI(TAG, "AS7331 started");
   ESP_LOGI(TAG, "AS7331 running in CONT mode with Auto-Gain");
 }
 
 void AS7331Component::update() {
   uint8_t buf[6];
+  if (!read_bytes(REG_MRES1, buf, 6)) {
+    ESP_LOGW(TAG, "I2C read failed");
+    return;
+  }
   if (!read_bytes(REG_MRES1, buf, 6)) return;
 
   uint16_t uva = (buf[1] << 8) | buf[0];
   uint16_t uvb = (buf[3] << 8) | buf[2];
-  uint16_t uvc = (buf[5] << 8) | buf[4];
-
-  if (uva_raw_) uva_raw_->publish_state(uva);
-  if (uvb_raw_) uvb_raw_->publish_state(uvb);
-  if (uvc_raw_) uvc_raw_->publish_state(uvc);
-
-  auto_adjust_(uva, uvb, uvc);
-
+@@ -78,22 +94,31 @@
   float tconv = (1 << int_time_) / 1000.0f;
   float gain_factor = GAIN_TABLE[gain_];
 
+  float uva_w = (uva / (RESP_UVA * gain_factor * tconv)) * 0.01f * uva_cal_;
+  float uvb_w = (uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f * uvb_cal_;
+  float uvc_w = (uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f * uvc_cal_;
   float uva_w = (uva / (RESP_UVA * gain_factor * tconv)) * 0.01f;
   float uvb_w = (uvb / (RESP_UVB * gain_factor * tconv)) * 0.01f;
   float uvc_w = (uvc / (RESP_UVC * gain_factor * tconv)) * 0.01f;
@@ -102,6 +101,9 @@ void AS7331Component::update() {
   if (uvb_) uvb_->publish_state(uvb_w);
   if (uvc_) uvc_->publish_state(uvc_w);
 
+  float ery = uvb_w + (uva_w * 0.002f);
+  if (uv_index_) uv_index_->publish_state(ery / 0.025f);
+}
   // ===== UV Index nach SparkFun / WHO =====
   // UVC wird NICHT berücksichtigt
   float erythem_wm2 =
