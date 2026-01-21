@@ -14,6 +14,15 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(AS7331Component),
 
+            # --- Erweiterungen ---
+            cv.Optional("auto_gain", default=True): cv.boolean,
+            cv.Optional("auto_time", default=True): cv.boolean,
+
+            cv.Optional("uva_calibration", default=1.0): cv.float_,
+            cv.Optional("uvb_calibration", default=1.0): cv.float_,
+            cv.Optional("uvc_calibration", default=1.0): cv.float_,
+
+            # --- Sensoren ---
             cv.Optional("uva_raw"): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
@@ -55,6 +64,15 @@ async def to_code(config):
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
+    # --- Übergabe Erweiterungen ---
+    cg.add(var.set_auto_gain(config["auto_gain"]))
+    cg.add(var.set_auto_time(config["auto_time"]))
+
+    cg.add(var.set_uva_calibration(config["uva_calibration"]))
+    cg.add(var.set_uvb_calibration(config["uvb_calibration"]))
+    cg.add(var.set_uvc_calibration(config["uvc_calibration"]))
+
+    # --- Sensoren ---
     if "uva_raw" in config:
         sens = await sensor.new_sensor(config["uva_raw"])
         cg.add(var.set_uva_raw(sens))
