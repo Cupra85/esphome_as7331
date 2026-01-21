@@ -29,17 +29,14 @@ CONFIG_SCHEMA = (
 
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=3,
                 accuracy_decimals=4,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=3,
                 accuracy_decimals=4,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
-                accuracy_decimals=3,
                 accuracy_decimals=4,
             ),
 
