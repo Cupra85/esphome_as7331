@@ -40,7 +40,7 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=4,
             ),
 
-            cv.Optional("uv_index_as7331"): sensor.sensor_schema(
+            cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
             ),
@@ -79,9 +79,9 @@ async def to_code(config):
         sens = await sensor.new_sensor(config["uvc"])
         cg.add(var.set_uvc(sens))
 
-    if "uv_index_as7331" in config:
-        sens = await sensor.new_sensor(config["uv_index_as7331"])
-        cg.add(var.set_uv_index_as7331(sens))
-    if "uv_index_as7331" in config:
-        cg.add(var.set_uv_index_as7331(await sensor.new_sensor(config["uv_index_as7331"])))
+    if "uv_index" in config:
+        sens = await sensor.new_sensor(config["uv_index"])
+        cg.add(var.set_uv_index(sens))
+    if "uv_index" in config:
+        cg.add(var.set_uv_index(await sensor.new_sensor(config["uv_index"])))
 
