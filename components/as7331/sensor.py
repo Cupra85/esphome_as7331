@@ -4,6 +4,7 @@ from esphome.components import i2c, sensor
 from esphome.const import (
     STATE_CLASS_MEASUREMENT,
     DEVICE_CLASS_ULTRAVIOLET,
+)
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
 AS7331Component = as7331_ns.class_(
