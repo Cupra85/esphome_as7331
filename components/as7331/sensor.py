@@ -26,32 +26,39 @@ CONFIG_SCHEMA = (
             cv.Optional("uva_raw"): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional("uvb_raw"): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional("uvc_raw"): sensor.sensor_schema(
                 unit_of_measurement="counts",
                 accuracy_decimals=0,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
 
             cv.Optional("uva"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
 
             cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
+                state_class=STATE_CLASS_MEASUREMENT,
             ),
         }
     )
