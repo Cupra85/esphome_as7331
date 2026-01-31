@@ -47,26 +47,22 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
-                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
-                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
-                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
 
             cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
                 state_class=STATE_CLASS_MEASUREMENT,
-                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
         }
     )
