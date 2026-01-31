@@ -1,6 +1,9 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
+from esphome.const import (
+    STATE_CLASS_MEASUREMENT,
+    DEVICE_CLASS_ULTRAVIOLET,
 
 as7331_ns = cg.esphome_ns.namespace("as7331")
 AS7331Component = as7331_ns.class_(
@@ -43,22 +46,26 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
+                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
             cv.Optional("uvb"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
+                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
             cv.Optional("uvc"): sensor.sensor_schema(
                 unit_of_measurement="W/m²",
                 accuracy_decimals=4,
                 state_class=STATE_CLASS_MEASUREMENT,
+                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
 
             cv.Optional("uv_index"): sensor.sensor_schema(
                 unit_of_measurement="UV Index",
                 accuracy_decimals=2,
                 state_class=STATE_CLASS_MEASUREMENT,
+                device_class=DEVICE_CLASS_ULTRAVIOLET,
             ),
         }
     )
